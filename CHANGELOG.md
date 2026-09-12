@@ -15,6 +15,7 @@ Open source release under the MIT License.
 - `build.mjs` — builds `dist/retrotalk.js` and `dist/retrotalk.min.js` from `src/`.
 - `test/` — tests that run without a browser (`npm test`).
 - `example/index.html` — a minimal working page.
+- The published page links to the API reference at its foot.
 
 ### Changed
 
@@ -30,6 +31,11 @@ Open source release under the MIT License.
 ### Removed
 
 - The obfuscated build. There is nothing to hide in an open source release.
+- The zip the site used to offer. The download points at the releases page.
+- The breadcrumb on the published page. It named a manual the page is not
+  part of, and neither the entry nor the neighbouring pages are published.
+- The music engine's name from the version strip. That engine is not on this
+  page; the strip names RetroTalk only.
 
 ## [2.0.0]
 

@@ -6,6 +6,12 @@
 // 音声合成そのものは扱いません。TalkAudio がこれを継承して、
 // 音声の登録と再生を足します。
 
+/**
+ * 音を出すための基底クラスです。
+ *
+ * `AudioContext` と出力先、再生中の音の管理だけを持ちます。音声合成は扱いません。
+ * 使うのは `MmsxxRetroTalk` のほうで、このクラスはそれが継承しているものです。
+ */
 export class SimpleAudio {
   /**
    * @param {AudioContext} ctx 呼び出し側で作った AudioContext。
