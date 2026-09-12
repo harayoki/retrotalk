@@ -1,0 +1,28 @@
+name: Release
+
+# タグを打つと、テストを通してから固めたものをリリースに貼ります。
+# リポジトリに dist/ を置いていないので、受け取る先はここだけになります。
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # npm ci ではなく install。package-lock.json は置いていません
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: npm run build
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/retrotalk.js
+            dist/retrotalk.min.js
