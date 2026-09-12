@@ -1,11 +1,16 @@
 name: Release
 
-# Pushing a tag runs the tests, builds, and attaches the bundles to the
-# release. The repository keeps no dist/, so the release is the only place
-# the built files are handed out.
+# Tagging a release runs the tests, builds, and attaches the bundles to it.
+# The repository keeps no dist/, so the release is the only place the built
+# files are handed out.
+#
+# Both triggers are needed: publishing a draft release creates the tag without
+# a push event, so the push trigger alone would miss it.
 on:
   push:
     tags: ['v*']
+  release:
+    types: [published]
 
 permissions:
   contents: write
