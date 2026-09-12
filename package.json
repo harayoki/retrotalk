@@ -1,0 +1,34 @@
+{
+  "name": "retrotalk",
+  "version": "2.1.0",
+  "description": "Retro voice engine that sounds like a 1980s Japanese personal computer, back when they were called maikon",
+  "license": "MIT",
+  "author": "harayoki",
+  "homepage": "https://harayoki.github.io/retrotalk/",
+  "repository": { "type": "git", "url": "git+https://github.com/harayoki/retrotalk.git" },
+  "bugs": { "url": "https://github.com/harayoki/retrotalk/issues" },
+  "keywords": ["speech synthesis", "formant", "retro", "web audio", "japanese"],
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./dist/retrotalk.js": "./dist/retrotalk.js",
+    "./dist/retrotalk.min.js": "./dist/retrotalk.min.js"
+  },
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "browser": "dist/retrotalk.min.js",
+  "sideEffects": false,
+  "files": ["src", "dist", "LICENSE", "README.md"],
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test",
+    "prepublishOnly": "node build.mjs",
+    "docs": "jsdoc -c jsdoc.json && node -e \"const{globSync,rmSync}=require('fs');globSync('docs/api/**/*.md').forEach((f)=>rmSync(f))\""
+  },
+  "devDependencies": {
+    "clean-jsdoc-theme": "^5.2.0",
+    "esbuild": "^0.28.2",
+    "jsdoc": "^4.0.5"
+  },
+  "publishConfig": { "access": "public" }
+}

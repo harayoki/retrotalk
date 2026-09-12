@@ -1,0 +1,29 @@
+name: Release
+
+# Pushing a tag runs the tests, builds, and attaches the bundles to the
+# release. The repository keeps no dist/, so the release is the only place
+# the built files are handed out.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # install, not ci: no package-lock.json is committed
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: npm run build
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/retrotalk.js
+            dist/retrotalk.min.js

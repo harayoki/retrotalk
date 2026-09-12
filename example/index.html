@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<title>RetroTalk v2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body{font:14px/1.7 system-ui, sans-serif; margin:0; padding:24px; max-width:640px}
+  input{font:inherit; width:100%; padding:8px; box-sizing:border-box}
+  button{font:inherit; padding:8px 16px; margin-top:8px; cursor:pointer}
+  p{color:#666}
+</style>
+<h1>RetroTalk v2</h1>
+<p>文を書いて、ボタンを押すとしゃべります。カタカナで書いてください。</p>
+<input id="text" value="コンニチワ。ワタシワ レトロトーク エンジン デス。">
+<button id="say" type="button">しゃべる</button>
+
+<script src="../dist/retrotalk.js"></script>
+<script>
+  var voice = new MmsxxRetroTalk(new AudioContext());
+  document.getElementById('say').addEventListener('click', function () {
+    voice.talk(document.getElementById('text').value);
+  });
+</script>
+</html>

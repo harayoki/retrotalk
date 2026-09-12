@@ -1,0 +1,36 @@
+# 取ってきたもの
+node_modules/
+package-lock.json
+
+# 作業中の置き場
+tmp/
+temp/
+.work/
+.cache/
+
+# 書きかけ・控え
+*~
+*.bak
+*.orig
+*.rej
+*.swp
+*.swo
+.#*
+#*#
+
+# 記録
+*.log
+npm-debug.log*
+
+# 機械が置くもの
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 編集の道具
+.vscode/
+.idea/
+*.sublime-workspace
+
+# 固めたもの
+dist/

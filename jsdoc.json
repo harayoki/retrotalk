@@ -1,0 +1,29 @@
+{
+  "source": {
+    "include": [
+      "src"
+    ],
+    "includePattern": "\\.js$"
+  },
+  "opts": {
+    "destination": "docs/api",
+    "template": "node_modules/clean-jsdoc-theme/dist",
+    "recurse": true,
+    "readme": "docs-home.md",
+    "basePath": "/retrotalk/api",
+    "siteName": "RetroTalk",
+    "copyPage": false
+  },
+  "plugins": [
+    "plugins/markdown",
+    "plugins/underscore"
+  ],
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false,
+    "default": {
+      "outputSourceFiles": false
+    },
+    "search": false
+  }
+}
