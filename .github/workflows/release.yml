@@ -1,7 +1,8 @@
 name: Release
 
-# タグを打つと、テストを通してから固めたものをリリースに貼ります。
-# リポジトリに dist/ を置いていないので、受け取る先はここだけになります。
+# Pushing a tag runs the tests, builds, and attaches the bundles to the
+# release. The repository keeps no dist/, so the release is the only place
+# the built files are handed out.
 on:
   push:
     tags: ['v*']
@@ -17,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      # npm ci ではなく install。package-lock.json は置いていません
+      # install, not ci: no package-lock.json is committed
       - run: npm install --no-audit --no-fund
       - run: npm test
       - run: npm run build
