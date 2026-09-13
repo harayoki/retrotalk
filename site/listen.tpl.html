@@ -1,0 +1,570 @@
+<title>Retro Talk v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+JP:wght@400&display=swap">
+<style>
+/* 色と書体は解説のページと同じもの。**声のページと並べて見るもの**なので、
+   別のところから来たように見えないほうがよい */
+/*__TOKENS_CSS__*/
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--mono); font-size:13px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:760px; margin:0 auto; padding:28px 20px 80px}
+header{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 16px}
+h1{font-size:20px; font-weight:600; margin:0; letter-spacing:-.01em}
+.sub{color:var(--dim); font-size:12px}
+
+.probe{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1px;
+  background:var(--line); border:1px solid var(--line); margin:16px 0 8px;
+}
+.probe div{background:var(--panel); padding:9px 12px; display:flex; justify-content:space-between; gap:10px}
+.probe b{font-weight:400; color:var(--dim); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase}
+
+.bar{display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin:14px 0 6px}
+
+/* **音の組み替え方のノブ。**声のノブ(高さ・速さ)ではなく、鼻音の長さや渡りの幅のような
+   **エンジンの中の決めごと**を、聴きながら切り替える。既定から動いた行だけ琥珀で印す */
+.asm{
+  margin:14px 0 0; padding:10px 12px 8px; background:var(--panel); border:1px solid var(--line);
+}
+/* **鳴らした文の下に付いてくる。**上に置きっぱなしだと、下の文を鳴らすころには見えない */
+.said .asm{margin-top:10px}
+.asm .rows{display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:6px 18px}
+.asm details{margin-top:8px; border-top:1px solid var(--line); padding-top:6px}
+.asm summary{cursor:pointer; font-size:10.5px; color:var(--dim); letter-spacing:.08em; text-transform:uppercase; list-style:none; display:flex; align-items:center; gap:6px}
+.asm summary::before{content:'▸'; font-size:10px}
+.asm details[open] summary::before{content:'▾'}
+.asm summary:focus-visible{outline:1px solid var(--amber); outline-offset:2px}
+.asm details .rows{margin-top:6px}
+.asm .head{display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding-bottom:6px; border-bottom:1px solid var(--line); margin-bottom:8px}
+.asm .head b{font-weight:400; color:var(--dim); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase}
+.asm .head button{font:inherit; font-size:10.5px; cursor:pointer; padding:2px 8px; background:var(--sunk); color:var(--ink); border:1px solid var(--line-hi); border-radius:3px}
+.asm label{display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:11px; color:var(--dim); min-width:0}
+.asm label span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:var(--jp)}
+.asm select{font-family:var(--jp)}
+.asm select{font:inherit; font-size:11px; color:var(--ink); background:var(--sunk); border:1px solid var(--line-hi); border-radius:3px; padding:2px 4px; max-width:150px}
+.asm label.moved{color:var(--amber)}
+.asm label.moved select{border-color:var(--amber)}
+.asm .tip{font-family:var(--jp); font-size:10.5px; color:var(--dim); margin:8px 0 0}
+
+/* **鳴らした文の絵。**組み替えの帯の下に出る。上が大きさ、音源の帯、口の形(フォルマント)、仮名。
+   横は 10ms を 6px にして、長い文は横に流す(ページは横に伸ばさない) */
+.pic{margin:8px 0 0; overflow-x:auto; display:none}
+.pic.on{display:block}
+.pic canvas{display:block; image-rendering:pixelated}
+.picfoot{display:flex; align-items:flex-start; gap:10px; margin:4px 0 0}
+.pic .cap{font-size:10px; color:var(--dim); margin:0; letter-spacing:.04em}
+.pic .close{font:inherit; font-size:10.5px; font-family:var(--jp); cursor:pointer; padding:1px 8px; white-space:nowrap; background:var(--sunk); color:var(--dim); border:1px solid var(--line-hi); border-radius:3px}
+.pic .close:hover{color:var(--amber); border-color:var(--amber)}
+
+.intro{margin:16px 0 0; font-family:var(--jp); font-size:12.5px}
+.how{
+  margin:12px 0 0; padding:11px 13px; font-family:var(--jp); font-size:11.5px; color:var(--dim);
+  background:var(--panel); border:1px solid var(--line);
+}
+.how p{margin:0}
+.how p + p{margin-top:5px}
+
+h2{
+  font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim);
+  font-weight:400; margin:30px 0 0; padding-bottom:6px; border-bottom:1px solid var(--line);
+}
+ol{list-style:none; margin:0; padding:0}
+/* **番号・押すところ・文**の 3 列。番号は幅を決めておかないと、
+   2 桁になったところで文の頭が揃わなくなる */
+.item{
+  display:grid; grid-template-columns:28px 30px 1fr; gap:0 10px; align-items:start;
+  padding:11px 0; border-bottom:1px solid var(--line);
+}
+.no{color:var(--dim); font-size:11px; padding-top:7px; font-variant-numeric:tabular-nums}
+.play{
+  font:inherit; font-size:11px; cursor:pointer; width:30px; height:26px;
+  background:var(--sunk); color:var(--ink);
+  border:1px solid var(--line-hi); border-radius:3px;
+}
+.play:hover{border-color:var(--amber); color:var(--amber)}
+/* **鳴っているものは地を反転**。琥珀は「押せる」の色なので、ここでは使わない */
+.play.on{background:var(--ink); color:var(--ground); border-color:var(--ink)}
+.said{min-width:0}
+.kana{margin:0; font-family:var(--jp); font-size:14px; word-break:break-all}
+/* 枠いっぱいまで使う。字数で折り返しを止めると、枠だけ右へ伸びて見える */
+.note{margin:3px 0 0; font-family:var(--jp); font-size:11px; color:var(--dim)}
+footer{margin-top:34px; color:var(--dim); font-size:11px; line-height:1.7}
+#oops{
+  display:none; margin:0 0 18px; padding:10px 13px;
+  background:var(--panel); border:1px solid var(--amber); color:var(--amber); font-size:11.5px;
+}
+</style>
+
+<div class="wrap">
+  <div id="oops"></div>
+  <header>
+    <h1>Retro Talk v2</h1>
+    <span class="sub">詳細ボイステスト</span>
+  </header>
+
+  <div class="probe" id="probe"></div>
+
+  <div class="bar"><div class="seg" id="theme"></div></div>
+
+  <p class="intro">1980年代のマイコンに搭載されていた独特な音声を写した <b>Retro Talk v2</b> の、現状の音声確認用ページ。</p>
+  <div class="how">
+    <p>声は全部おなじ(280Hz / 声道 +2 / フレーム間を埋めない / 量子化なし)。<b>声色は変えない</b> — 聞きやすさだけを見るため。</p>
+    <p>各文をクリックすると音声が確認できます。</p>
+  </div>
+
+  <div class="asm" id="asm"></div>
+
+  <div id="body"></div>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>/*__ENGINE__*/</script>
+<script>
+// **配るものと同じ入口を使う**(retrotalk/index.js)
+const $ = (s) => document.querySelector(s);
+const el = (t, c, x) => { const n = document.createElement(t); if (c) n.className = c; if (x != null) n.textContent = x; return n; };
+
+addEventListener('error', (e) => {
+  const box = $('#oops');
+  box.style.display = 'block';
+  box.textContent = 'Something broke: ' + (e.message || e);
+});
+
+// ---- 聴いてもらう文 ----
+//
+// **手で書いている。**何を聴いてほしいかは、エンジンからは取り出せない。
+//
+// 並びは、直したいところの順。**同じ文を出し続けることに意味がある** —
+// 前に聴いたときと同じものが比べられる。
+//
+// **声色は行ごとに変えない。**このページで見るのは**聞きやすさ**なので、
+// 高さや声道の長さまで動くと、何のおかげで聞き取れたのか分からなくなる。
+// 一度「男声で 1 行」を置いていたが、そういう理由で落とした(2026-09-04)。
+// 変えるのは**組み立て方**のほうだけ(上の帯)。
+const DOC = [
+  { h: '基準' },
+  { say: 'マジウケル',
+    note: '長く聴き比べに使っている文。頭が鼻音。' },
+  { say: 'オワリマシタ。',
+    note: '末尾の「シタ」の i が「スゥ」と鳴っていないか。' },
+  { say: 'オマチクダサイ。', note: 'チ・ク の並び。' },
+  { say: 'コショウチュウデス。',
+    note: 'ショ・チュ の拗音と、末尾「デス」の無声化。' },
+  { say: 'イラッシャイマセ。', note: 'ッシャ(促音 + 拗音)。' },
+  { say: 'アリガトウゴザイマシタ。',
+    note: '長い文で抑揚が沈まないか。' },
+
+  { h: '拗音' },
+  { say: 'キャベツ ト キュウリ。',
+    note: 'キャ が カ に、キュ が ク に聞こえないか。' },
+  { say: 'シュクダイ、チョット マッテ。',
+    note: 'シュ・チョ は子音そのものが違うので、キャ行より潰れにくい。' },
+  { say: 'ギュウニュウ。',
+    note: '無声の子音がひとつも無い語。声が途切れないので、言葉に聞こえにくい。' },
+  { say: 'Q ト 9。JR デス。',
+    note: '英字と数字はこの口を通る(Q = キュー、9 = キュウ、J = ジェー)。' },
+
+  { h: '無声化' },
+  { say: 'ハイ、ソウデス。',
+    note: '末尾の ス が「スゥ」と有声で伸びていないか。' },
+  { say: 'ワカリマシタ。', note: 'シ が「シィ」になっていないか。' },
+  { say: 'シツレイシマス。', note: 'シ・ツ が続くところと、末尾の マス。' },
+
+  { h: '撥音' },
+  { say: 'サンマ ト サンカ。',
+    note: '2 つの ン が同じ音に聞こえるか。ンマ は m、ンカ は奥の鼻音。' },
+  { say: 'シンブン ヲ ヨンダ。', note: 'ンブ(m)、ンダ(n)、語末の ン。' },
+  { say: 'テンキ ガ イイ。', note: 'ンキ。鼻に抜けて聞こえるか。' },
+
+  { h: '最小対' },
+  { say: 'キャ。カ。', note: '拗音と直音。' },
+  { say: 'キュー。クー。', note: '同上。数字の 9 を読ませると通る口。' },
+  { say: 'シュ。ス。', note: 'かな 1 字だけの文。ささやきに聞こえないか。' },
+  { say: 'チョ。ト。', note: 'ch と t。' },
+  { say: 'シ。ヒ。', note: 'こすれる音どうし。混ざって聞こえないか。' },
+  { say: 'サンマ。サンカ。', note: 'ン に違いがあるか。' },
+  { say: 'デス。デスー。',
+    note: '無声化していれば デス は短く切れ、デスー だけ伸びる。' },
+  { say: 'カ。タ。パ。', note: '破裂音 3 つ。語頭。' },
+  { say: 'アカ。アタ。アパ。',
+    note: '同じ 3 つを母音のあとで。破裂と息は母音より小さいので埋もれやすい。' },
+  { say: 'アカ。アハ。', note: '破裂と、こすれる音。' },
+  { say: 'アタ。アサ。', note: '同じことをタ行で。' },
+  { say: 'ギュ。ニュ。',
+    note: '声で作る子音の拗音 2 つ。ギュ は閉じた声 → 一撃 → 声が育つ、ニュ は鼻音(60ms)→ 鼻にかかった渡り → ウ。差があるか、言葉に聞こえるか。' },
+  { say: 'カ。ガ。', note: '無声と有声。ガ は閉じているあいだも低く声が出ていて、開いたら息を挟まずに声が戻る。' },
+];
+
+// ---- 鳴らす ----
+//
+// **波形はその場で作る。**録音は持っていないので、押されたときに組み立てる。
+// `defineTalk` は名前ごとに覚えるので、**2 回目からは出来上がりが返る**。
+let player = null;
+let playing = null;
+const made = new Set();
+
+async function engine() {
+  if (player) return player;
+  player = new MmsxxRetroTalk(new AudioContext());
+  await player.unlock();
+  return player;
+}
+
+// ---- 音の組み替え方 ----
+//
+// **エンジンの `assembly` に渡すノブ。**声のノブ(高さ・速さ)とは別で、
+// 鼻音の長さや渡りの幅のような、**音の組み立ての決めごと**を切り替える。
+// 既定は `retrotalk/talk.js` の `ASSEMBLY` と同じ値で、**先頭の選択肢が既定**。
+// 良かった値はエンジンの既定に写す(ここに残さない)。
+//
+// **主なものと、細かいもの**(`fine`)に分ける。細かいものは畳んでおく —
+// 全部並べると、どれを動かせばよいかが埋もれる。
+//
+// **画面の字は日本語。**CLAUDE.md は「画面に出る文字は英語」だが、
+// このページは日本語の声を日本語の耳で確かめる道具で、依頼者が
+// 「日本語ベースがいい」と言った(2026-09-04)。依頼者の言葉が先。
+const KNOBS = [
+  { key: 'palNasalFrames', label: '拗音の鼻音の長さ', opts: [[6, '60ms'], [4, '40ms'], [8, '80ms']] },
+  { key: 'nasalAmp', label: '鼻音の大きさ', opts: [[null, '10'], [9, '9'], [11, '11']] },
+  { key: 'nasalizedGlide', label: '鼻音のあとの渡り(ャュョ)を太く', opts: [[true, '入'], [false, '切(母音の幅)']] },
+  { key: 'palF3', label: '声のあとの渡り(ャュョ)の第 3 フォルマント', opts: [['vowel', '母音のまま'], ['y', 'ヤ行 (2900Hz)']] },
+  { key: 'voicedGap', label: 'ガ行の破裂のあと', opts: [['voice', '声が戻る'], ['silent', '無音']] },
+  { key: 'voicedBurstAmp', label: 'ガ行の破裂の大きさ', opts: [[12, '12'], [14, '14'], [10, '10']] },
+  { key: 'barAmp', label: 'ガ行で口を閉じているあいだの声の大きさ', opts: [[7, '7'], [4, '4'], [9, '9']] },
+  // ---- 細かいもの ----
+  { key: 'nasalTail', label: '鼻音の終わりを渡り(ャュョ)へ寄せる', opts: [[true, '入'], [false, '切']], fine: true },
+  { key: 'glideAfterNasal', label: '鼻音のあとの渡り(ャュョ)の大きさ', opts: [['ramp', '12 → 14'], ['full', '14'], ['low', '12']], fine: true },
+  { key: 'voicedBurstVoice', label: 'ガ行の破裂に声を乗せる', opts: [[false, '切(ノイズだけ)'], [true, '入']], fine: true },
+  { key: 'barBand', label: 'ガ行で口を閉じているあいだの声の幅', opts: [['bar', '潰す'], ['nasal', '鼻音と同じ']], fine: true },
+];
+const assembly = {};
+// **切り替えるたびに番号を進める。**`defineTalk` は名前ごとに波形を覚えるので、
+// 同じ名前のままだと古い組み立てが鳴る
+let asmSerial = 0;
+// 細かいものを開いているか。組み直しても閉じ直さない
+let fineOpen = false;
+const asmDefault = () => KNOBS.every((k) => assembly[k.key] === k.opts[0][0]);
+
+function asm() {
+  const host = $('#asm');
+  host.textContent = '';
+  const head = el('div', 'head');
+  head.appendChild(el('b', null, '音の組み替え' + (asmDefault() ? ' · 既定' : ' · 動かしてある')));
+  const reset = el('button', null, '既定に戻す');
+  reset.type = 'button';
+  reset.addEventListener('click', () => {
+    for (const k of KNOBS) assembly[k.key] = k.opts[0][0];
+    asmSerial++; asm();
+  });
+  head.appendChild(reset);
+  host.appendChild(head);
+  const row = (k) => {
+    const lab = el('label');
+    lab.appendChild(el('span', null, k.label));
+    const sel = el('select');
+    sel.dataset.key = k.key;
+    k.opts.forEach(([v, name], i) => {
+      const o = el('option', null, name + (i === 0 ? ' *' : ''));
+      o.value = String(i);
+      sel.appendChild(o);
+    });
+    sel.value = String(Math.max(0, k.opts.findIndex(([v]) => v === assembly[k.key])));
+    if (assembly[k.key] !== k.opts[0][0]) lab.classList.add('moved');
+    sel.addEventListener('change', () => {
+      assembly[k.key] = k.opts[+sel.value][0];
+      asmSerial++; asm();
+    });
+    lab.appendChild(sel);
+    return lab;
+  };
+  const main = el('div', 'rows');
+  for (const k of KNOBS) if (!k.fine) main.appendChild(row(k));
+  host.appendChild(main);
+  // **細かいものは畳んでおく。**動かしたものがあれば、畳んだままでも見出しで分かる
+  const fine = el('details');
+  fine.open = fineOpen;
+  fine.addEventListener('toggle', () => { fineOpen = fine.open; });
+  const movedFine = KNOBS.filter((k) => k.fine && assembly[k.key] !== k.opts[0][0]).length;
+  fine.appendChild(el('summary', null, 'もっと見る' + (movedFine ? ` · ${movedFine} 個動かしてある` : '')));
+  const rows = el('div', 'rows');
+  for (const k of KNOBS) if (k.fine) rows.appendChild(row(k));
+  fine.appendChild(rows);
+  host.appendChild(fine);
+}
+for (const k of KNOBS) if (k.key) assembly[k.key] = k.opts[0][0];
+
+async function play(d, btn) {
+  const p = await engine();
+  if (playing) { playing.classList.remove('on'); playing.textContent = '▶'; }
+  p.stopTalk();
+  if (playing === btn) { playing = null; return; }
+  const id = '__x__' + DOC.indexOf(d) + '#' + asmSerial;
+  if (!made.has(id)) {
+    p.defineTalk(id, d.say, { assembly: { ...assembly } });
+    made.add(id);
+  }
+  p.playTalk(id);
+  btn.classList.add('on'); btn.textContent = '■';
+  playing = btn;
+  // **鳴らした波形を絵にする。**波形は playTalk が 1 回目に作って覚えている
+  // **絵は 1 つだけ。**別の文を鳴らしたら、前の絵は閉じる
+  for (const other of document.querySelectorAll('.pic.on')) other.classList.remove('on');
+  const def = p.talkDefs.get(id);
+  if (def && def.buffer) {
+    const li = btn.closest('.item');
+    // **口の形も一緒に取る。**波形の周波数分解は倍音の縞に埋もれて読めないので、
+    // エンジンが持っているフォルマント(音になる手前)を線で重ねる
+    const talkOpts = { assembly: { ...assembly } };
+    li._pic = { data: def.buffer.getChannelData(0), rate: def.buffer.sampleRate,
+      frames: MmsxxRetroTalk.talkFrames(d.say, talkOpts), moras: MmsxxRetroTalk.parseTalk(d.say),
+      cap: (asmDefault() ? '既定の組み替え' : '動かした組み替え') + ' · ' + Math.round(def.buffer.duration * 1000) + 'ms' };
+    paint(li);
+    // **組み替えの帯を、鳴らした文の下へ連れてくる。**ノブが上、絵がその下
+    // (「パラメより下に画像を配置して」2026-09-04)
+    li.querySelector('.said').insertBefore($('#asm'), li.querySelector('.pic'));
+  }
+  if (window.__probe) { const f = window.__probe; window.__probe = null; f(p); }
+}
+
+// ---- 絵 ----
+//
+// **鳴らした文を、エンジンの目で見せる。**上から —
+//   1. 大きさ(琥珀の棒)。10ms ごとの山の高さ。文の中でいちばん高い山を上端にする
+//   2. 音源(細い帯)。墨 = 声、薄い = ノイズ(息・こすれ・一撃)、空 = 無音
+//   3. 口の形。横線 3 本が第 1〜3 フォルマント(低いほうから)、線の太さが帯域幅。
+//      下地の灰色は波形の周波数分解(0〜5kHz)。**縞は声の倍音**で、口の形ではない
+//   4. 仮名(ローマ字)。モーラの切れ目に縦線
+// 横は 10ms が 6px。長い文は横に流す。
+// 「画像の意味が分からない」と言われて、周波数分解だけだったものに線と軸を足した(2026-09-04)
+const PX = 6, ENV_H = 40, SRC_H = 8, SPEC_H = 160, MORA_H = 18, TOP_HZ = 5000, LEFT = 30;
+function paint(li) {
+  const pic = li.querySelector('.pic');
+  if (!li._pic) return;
+  const { data, rate, frames: fr, moras, cap } = li._pic;
+  const css = getComputedStyle(document.documentElement);
+  const ink = css.getPropertyValue('--ink').trim();
+  const dim = css.getPropertyValue('--dim').trim();
+  const amber = css.getPropertyValue('--amber').trim();
+  const panel = css.getPropertyValue('--panel').trim();
+  const line = css.getPropertyValue('--line').trim();
+  const mono = css.getPropertyValue('--mono').trim() || 'monospace';
+  const hop = Math.round(rate * 0.01);
+  const frames = Math.min(fr.length, Math.floor(data.length / hop));
+  const N = 256, half = N / 2;
+  const bins = Math.min(half, Math.floor(TOP_HZ / (rate / N)));
+  const canvas = pic.querySelector('canvas');
+  const specY = ENV_H + 4 + SRC_H + 4;             // 口の形の上端
+  canvas.width = LEFT + frames * PX; canvas.height = specY + SPEC_H + MORA_H;
+  const g = canvas.getContext('2d');
+  g.fillStyle = panel; g.fillRect(0, 0, canvas.width, canvas.height);
+  const X = (f) => LEFT + f * PX;
+  const Y = (hz) => specY + SPEC_H - Math.round(Math.min(1, hz / TOP_HZ) * SPEC_H);
+
+  // 山と周波数分解。窓は 256 点のハン窓(26ms)
+  const peaks = new Float32Array(frames);
+  const spec = new Float32Array(frames * bins);
+  const win = new Float32Array(N);
+  for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1));
+  const cosT = new Float32Array(bins * N), sinT = new Float32Array(bins * N);
+  for (let k = 0; k < bins; k++) for (let i = 0; i < N; i++) {
+    cosT[k * N + i] = Math.cos(2 * Math.PI * k * i / N); sinT[k * N + i] = Math.sin(2 * Math.PI * k * i / N);
+  }
+  let maxPk = 1e-9, maxDb = -200;
+  for (let f = 0; f < frames; f++) {
+    let pk = 0;
+    for (let i = 0; i < hop; i++) pk = Math.max(pk, Math.abs(data[f * hop + i]));
+    peaks[f] = pk; maxPk = Math.max(maxPk, pk);
+    const at = f * hop + (hop >> 1) - (N >> 1);
+    for (let k = 0; k < bins; k++) {
+      let re = 0, im = 0;
+      for (let i = 0; i < N; i++) {
+        const v = (data[at + i] || 0) * win[i];
+        re += v * cosT[k * N + i]; im += v * sinT[k * N + i];
+      }
+      const db = 10 * Math.log10(re * re + im * im + 1e-12);
+      spec[f * bins + k] = db; if (db > maxDb) maxDb = db;
+    }
+  }
+  // 3. 下地(周波数分解)。薄く敷くだけ — 主役は線のほう
+  const RANGE = 60;
+  const rgb = hexToRgb(ink);
+  for (let f = 0; f < frames; f++) for (let k = 0; k < bins; k++) {
+    const a = Math.max(0, Math.min(1, (spec[f * bins + k] - maxDb + RANGE) / RANGE));
+    if (a <= 0.05) continue;
+    g.fillStyle = `rgba(${rgb},${(a * a * 0.28).toFixed(3)})`;
+    const y0 = specY + SPEC_H - Math.round((k + 1) / bins * SPEC_H);
+    const y1 = specY + SPEC_H - Math.round(k / bins * SPEC_H);
+    g.fillRect(X(f), y0, PX, Math.max(1, y1 - y0));
+  }
+  // 周波数の目盛り(1kHz ごと)と、その字
+  g.font = `10px ${mono}`; g.textBaseline = 'middle'; g.textAlign = 'right';
+  for (let khz = 1; khz <= 4; khz++) {
+    g.fillStyle = line; g.fillRect(LEFT, Y(khz * 1000), frames * PX, 1);
+    g.fillStyle = dim; g.fillText(khz + 'k', LEFT - 4, Y(khz * 1000));
+  }
+  g.fillStyle = dim; g.fillText('Hz', LEFT - 4, specY + 6);
+  // 100ms ごとの目盛り
+  g.textAlign = 'left'; g.textBaseline = 'top';
+  for (let f = 10; f < frames; f += 10) {
+    g.fillStyle = line; g.fillRect(X(f), 0, 1, specY + SPEC_H);
+    // **ms は絵の上端に置く。**下は仮名の場所で、重なると読めない
+    if (f % 20 === 0) { g.fillStyle = dim; g.fillText(f * 10 + 'ms', X(f) + 2, 1); }
+  }
+  // 1. 大きさ(山)
+  g.fillStyle = amber;
+  for (let f = 0; f < frames; f++) {
+    const h = Math.round(peaks[f] / maxPk * ENV_H);
+    g.fillRect(X(f), ENV_H - h, PX, h);
+  }
+  // 2. 音源
+  for (let f = 0; f < frames; f++) {
+    const fm = fr[f];
+    if (!fm || fm.amp <= 0) continue;
+    g.fillStyle = fm.voiced ? ink : dim;
+    g.globalAlpha = fm.voiced ? 1 : 0.55;
+    g.fillRect(X(f), ENV_H + 4, PX, SRC_H);
+  }
+  g.globalAlpha = 1;
+  // 3. 口の形(第 1〜3 フォルマント)。帯域幅を薄い帯、中心を線で。無音のときは薄く
+  const argb = hexToRgb(amber);
+  for (let f = 0; f < frames; f++) {
+    const fm = fr[f];
+    if (!fm) continue;
+    const on = fm.amp > 0;
+    for (let k = 0; k < 3; k++) {
+      const hz = fm.formant[k], bw = fm.formantBw[k];
+      const y0 = Y(hz + bw / 2), y1 = Y(hz - bw / 2);
+      g.fillStyle = `rgba(${argb},${on ? 0.22 : 0.08})`;
+      g.fillRect(X(f), y0, PX, Math.max(1, y1 - y0));
+      g.fillStyle = on ? ink : dim;
+      g.globalAlpha = on ? 1 : 0.45;
+      g.fillRect(X(f), Y(hz) - 1, PX, 2);
+      g.globalAlpha = 1;
+    }
+  }
+  // 4. 仮名(ローマ字)。モーラの頭に縦線と字
+  g.font = `10px ${mono}`; g.textAlign = 'left'; g.textBaseline = 'top';
+  let lastMora = -1;
+  for (let f = 0; f < frames; f++) {
+    const mi = fr[f] && fr[f].mora;
+    if (mi == null || mi === lastMora) continue;
+    lastMora = mi;
+    const m = moras[mi];
+    if (!m || m.set || m.tune) continue;
+    g.fillStyle = m.pause ? line : dim;
+    g.fillRect(X(f), specY - 2, 1, SPEC_H + 4);
+    if (m.pause) continue;
+    const label = (m.c || '') + (m.pal ? 'y' : '') + (m.v === 'n' ? 'N' : m.v) + (m.stop ? '!' : '');
+    g.fillStyle = ink;
+    g.fillText(label, X(f) + 2, specY + SPEC_H + 4);
+  }
+  const legend = '琥珀 = 大きさ · 帯: 墨 = 声、薄い = ノイズ · 線 = 第 1〜3 フォルマント(口の形) · 灰の下地 = 周波数分解';
+  pic.querySelector('.cap').textContent = cap + ' · ' + legend;
+  pic.classList.add('on');
+}
+function hexToRgb(hex) {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex);
+  if (!m) return '128,128,128';
+  let h = m[1]; if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+  return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)).join(',');
+}
+
+function build() {
+  const host = $('#body');
+  host.textContent = '';
+  let list = null;
+  let n = 0;
+  for (const d of DOC) {
+    if (d.h) {
+      host.appendChild(el('h2', null, d.h));
+      list = el('ol');
+      host.appendChild(list);
+      continue;
+    }
+    n++;
+    const li = el('li', 'item');
+    li.appendChild(el('div', 'no', String(n).padStart(2, '0')));
+    const btn = el('button', 'play', '▶');
+    btn.type = 'button';
+    btn.setAttribute('aria-label', '鳴らす');
+    btn.addEventListener('click', () => play(d, btn));
+    li.appendChild(btn);
+    const said = el('div', 'said');
+    said.appendChild(el('p', 'kana', d.say));
+    if (d.note) said.appendChild(el('p', 'note', d.note));
+    // 鳴らしたら絵が出る場所。押すまでは無い
+    const pic = el('div', 'pic');
+    pic.appendChild(el('canvas'));
+    const foot = el('div', 'picfoot');
+    // **閉じられるようにする。**一度出ると消せない、と言われた(2026-09-04)。
+    // もう一度鳴らせばまた出る。**左に置く** — 右端は絵の幅で動くので押しにくい
+    const close = el('button', 'close', '閉じる');
+    close.type = 'button';
+    close.addEventListener('click', () => pic.classList.remove('on'));
+    foot.appendChild(close);
+    foot.appendChild(el('p', 'cap'));
+    pic.appendChild(foot);
+    said.appendChild(pic);
+    li.appendChild(said);
+    list.appendChild(li);
+  }
+  $('#foot').textContent = 'Retro Talk v2 · ' + n + ' 文 · リアルタイム生成';
+}
+
+// ---- 上の帯 ----
+function probe() {
+  const host = $('#probe');
+  host.textContent = '';
+  const cell = (k, v) => {
+    const d = el('div');
+    d.appendChild(el('b', null, k));
+    d.appendChild(el('span', null, v));
+    host.appendChild(d);
+    return d;
+  };
+  cell('エンジン', MmsxxRetroTalk.VERSION ? 'v' + MmsxxRetroTalk.VERSION : '埋め込み');
+  cell('文', String(DOC.filter((d) => d.say).length));
+  cell('声のエンジン', 'v2.0.0 α');
+  const w = cell('波形', 'リアルタイム生成');
+  window.__probe = (p) => {
+    // **録音を持っていないことを、その場で見せる。**波形は鳴らすときに作っている
+    const got = p.talkDefs && p.talkDefs.get('__x__1');
+    w.lastChild.textContent = got && got.buffer
+      ? Math.round(got.buffer.duration * 1000) + 'ms ぶんをリアルタイム生成'
+      : 'リアルタイム生成';
+  };
+}
+
+// ---- 明るい / 暗い ----
+let theme = 'auto';
+function paintTheme() {
+  const r = document.documentElement;
+  if (theme === 'auto') r.removeAttribute('data-theme');
+  else r.setAttribute('data-theme', theme);
+  // 絵は地の色で描いてあるので、テーマが変わったら描き直す
+  for (const li of document.querySelectorAll('.item')) if (li._pic) paint(li);
+}
+function bars() {
+  const host = $('#theme');
+  host.textContent = '';
+  for (const [id, label] of [['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark']]) {
+    const b = el('button', null, label);
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(theme === id));
+    b.addEventListener('click', () => { theme = id; paintTheme(); bars(); });
+    host.appendChild(b);
+  }
+}
+
+paintTheme();
+probe();
+bars();
+asm();
+build();
+</script>

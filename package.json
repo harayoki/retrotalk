@@ -23,7 +23,8 @@
     "build": "node build.mjs",
     "test": "node --test",
     "prepublishOnly": "node build.mjs",
-    "docs": "node docs.mjs"
+    "docs": "node docs.mjs",
+    "site": "node site.mjs"
   },
   "devDependencies": {
     "clean-jsdoc-theme": "^5.2.0",
