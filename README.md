@@ -25,6 +25,7 @@
 * [デモとマニュアル](https://harayoki.github.io/retrotalk/)
 * [API リファレンス](https://harayoki.github.io/retrotalk/api/)
 * [声の比較](https://harayoki.github.io/retrotalk/listen/)
+* [PC6000シリーズのボイスについて](https://github.com/harayoki/retrotalk/blob/main/ABOUT_P6_VOICE.md)
 
 `example/index.html` をブラウザで開くと、そのまま試せます。
 
