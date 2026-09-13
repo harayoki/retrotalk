@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1]
+
+### Changed
+
+- Minor updates, such as class names and comments.
+
 ## [2.1.0]
 
 Open source release under the MIT License.

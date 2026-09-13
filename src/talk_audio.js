@@ -19,9 +19,7 @@ import { checkAqua } from './aquestalk.js';
 const AUTO_TALK = '\u0000talk:';
 
 /**
- * RetroTalk の入口です。音声の登録と再生を扱います。
- *
- * `SimpleAudio` を継承しているので、音量と消音の操作もここから行えます。
+ * ボイス再生を扱います。音量などとボイス以外の基本的なふるまいは `SimpleAudio` が担当します。
  *
  * @extends SimpleAudio
  * @example
