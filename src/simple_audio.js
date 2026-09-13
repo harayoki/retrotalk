@@ -1,16 +1,12 @@
 // SPDX-FileCopyrightText: 2026 harayoki
 // SPDX-License-Identifier: MIT
 
-// 音を出すための基底クラスです。AudioContext と出力先、再生中の音の管理だけを持ちます。
-//
-// 音声合成そのものは扱いません。TalkAudio がこれを継承して、
-// 音声の登録と再生を足します。
+// MmsxxRetroTalk の継承元で、直接扱う事はありません。
+// 音を出すための基本機能を持ち、ボイス関連の処理は担当しません。
 
 /**
- * 音を出すための基底クラスです。
- *
- * `AudioContext` と出力先、再生中の音の管理だけを持ちます。音声合成は扱いません。
- * 使うのは `MmsxxRetroTalk` のほうで、このクラスはそれが継承しているものです。
+ * `MmsxxRetroTalk` の継承元で、直接扱う事はありません。
+ * 音を出すための基本機能を持ち、ボイス関連の処理は担当しません。
  */
 export class SimpleAudio {
   /**
@@ -44,7 +40,7 @@ export class SimpleAudio {
    * AudioContext はここでは作りません。呼び出し側で作って渡してください。
    *
    * ```js
-   * const voice = new TalkAudio(new AudioContext());
+   * const voice = new MmsxxRetroTalk(new AudioContext());
    * ```
    *
    * ブラウザが同時に作れる AudioContext の数には上限があり、
@@ -55,7 +51,7 @@ export class SimpleAudio {
   unlock() {
     if (!this.ctx) {
       throw new Error('SimpleAudio: AudioContext を渡してください'
-        + ' — new TalkAudio(new AudioContext())');
+        + ' — new MmsxxRetroTalk(new AudioContext())');
     }
     if (this.ctx.state === 'suspended') this.ctx.resume();
   }

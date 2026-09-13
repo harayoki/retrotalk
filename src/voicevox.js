@@ -127,7 +127,7 @@ function flatten(list, meta) {
  *   `useMeta` を外すと VOICEVOX 側のパラメータ（話速・抑揚・間）を掛けません。
  *   すべて外すと、読みと切れ目だけになります
  * @returns {string} RetroTalk の文
- * @alias TalkAudio.voicevoxText
+ * @alias MmsxxRetroTalk.voicevoxText
  * @static
  */
 export function voicevoxText(src, opts = {}) {
@@ -206,7 +206,7 @@ export function voicevoxText(src, opts = {}) {
  * @param {object|string} src `.vvproj` か `/audio_query` の返り
  * @returns {{ok:boolean, version:string, lines:number, moras:number}}
  *   `version` は VOICEVOX のバージョン、`lines` は文の数、`moras` は拍の数
- * @alias TalkAudio.voicevoxInfo
+ * @alias MmsxxRetroTalk.voicevoxInfo
  * @static
  */
 export function voicevoxInfo(src) {

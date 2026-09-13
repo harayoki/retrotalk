@@ -5,6 +5,6 @@
  * RetroTalk のバージョン。`MmsxxRetroTalk.VERSION` として読めます。
  *
  * @type {string}
- * @alias TalkAudio.VERSION
+ * @alias MmsxxRetroTalk.VERSION
  */
 export const RETROTALK_VERSION = '2.1.0';
