@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2026 harayoki
 // SPDX-License-Identifier: MIT
 
-// 型紙にエンジンを流し込んで、声を聴き比べるページにします。
+// テンプレートにエンジンを流し込んで、声を聴き比べるページにします。
 //
 // 録音は持ちません。押されたときに波形を作るので、埋まっているエンジンが
-// そのまま鳴ります。文と「何を聴くか」は型紙の中に手で書いてあります。
+// そのまま鳴ります。文と「何を聴くか」はテンプレートの中に手で書いてあります。
 
 import { readFileSync } from 'node:fs';
 import { bundleEngine, safe } from './engine.mjs';

@@ -21,7 +21,7 @@ import { renderSharePage } from './site/build-share.mjs';
 
 const OUT = 'docs';
 
-// 型紙には書いていない頭です。置くだけの場所には枠が無いので、これが無いと
+// テンプレートには書いていないヘッダです。置くだけの場所には枠が無いので、これが無いと
 // 文字コードを当てにいかれて日本語が化けます。
 const HEAD = '<!doctype html>\n<meta charset="utf-8">\n'
   + '<meta name="viewport" content="width=device-width,initial-scale=1">\n';
@@ -52,7 +52,7 @@ const card = (at) => [
 ].join('\n');
 
 /**
- * 型紙のコメントを落とします。日本語で書いてあるのは組む人のためのもので、
+ * テンプレートのコメントを落とします。日本語で書いてあるのは組む人のためのもので、
  * 配る先で読ませるものではありません。
  *
  * 自分で切ると文字列の中の `//` まで切ってしまうので、縮めさせます。書き直させる
