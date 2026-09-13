@@ -23,7 +23,7 @@
     "build": "node build.mjs",
     "test": "node --test",
     "prepublishOnly": "node build.mjs",
-    "docs": "jsdoc -c jsdoc.json && node -e \"const{globSync,rmSync}=require('fs');globSync('docs/api/**/*.md').forEach((f)=>rmSync(f))\""
+    "docs": "node docs.mjs"
   },
   "devDependencies": {
     "clean-jsdoc-theme": "^5.2.0",
