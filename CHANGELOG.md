@@ -8,10 +8,7 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
-- The class is named `MmsxxRetroTalk` in the source as well. The API reference
-  used to show `TalkAudio`, a name that appears nowhere in the public API.
-- `SimpleAudio` says in one line that it is the parent class and is not meant
-  to be used directly.
+- Minor updates, such as class names and comments.
 
 ## [2.1.0]
 
