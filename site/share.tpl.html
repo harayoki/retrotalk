@@ -1,0 +1,132 @@
+<title>RetroTalk</title>
+<!--__CARD__-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+JP:wght@400&display=swap">
+<style>
+/*__TOKENS_CSS__*/
+*{box-sizing:border-box}
+body{
+  margin:0; padding:36px 20px 56px; background:var(--ground); color:var(--ink);
+  font-family:var(--mono); font-size:13px; line-height:1.6;
+  display:flex; justify-content:center;
+}
+main{width:100%; max-width:520px; display:flex; flex-direction:column; gap:20px}
+
+.mark{
+  font-weight:600; font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--dim);
+}
+.said{
+  font-family:var(--jp); font-size:19px; line-height:1.75; word-break:break-word;
+  border-left:2px solid var(--line-hi); padding:2px 0 2px 16px; margin:0;
+}
+.said.none{border-left-color:var(--line); color:var(--dim); font-size:15px}
+
+button.play{
+  font:inherit; font-size:15px; padding:14px 0; width:100%; cursor:pointer;
+  background:var(--panel); color:var(--ink);
+  border:1px solid var(--line-hi); border-radius:5px;
+}
+button.play:hover:enabled{background:var(--sunk)}
+button.play:active:enabled{transform:translateY(1px)}
+button.play:disabled{color:var(--line-hi); cursor:default}
+button.play:focus-visible{outline:2px solid var(--amber); outline-offset:2px}
+button.play.on{background:var(--sunk); color:var(--amber)}
+
+/* 使った設定。**読むだけ。**触るところは解説ページにある */
+.knobs{
+  display:flex; flex-wrap:wrap; gap:5px 12px; margin:0; padding:0; list-style:none;
+  font-size:12px; color:var(--dim);
+}
+.knobs li{white-space:nowrap}
+.knobs b{color:var(--teal); font-weight:400}
+.knobs.empty{display:none}
+
+footer{
+  border-top:1px solid var(--line); padding-top:16px; font-size:12px; color:var(--dim);
+  display:flex; flex-direction:column; gap:6px;
+}
+footer a{color:var(--amber)}
+@media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+</style>
+<main>
+  <div class="mark">RetroTalk</div>
+  <p class="said" id="said"></p>
+  <button class="play" id="play" type="button">再生</button>
+  <ul class="knobs" id="knobs"></ul>
+  <footer>
+    <a id="home" href="../"></a>
+  </footer>
+</main>
+<script>/*__ENGINE__*/</script>
+<script>
+/**
+ * **送られたリンクを開く人のためのページ。**
+ *
+ * ここには入力欄を置かない。書いてあるものを鳴らすだけにして、
+ * 自分で作りたい人は解説ページへ送る。
+ *
+ * 受け取るもの — `t` が文、`v` が話す人。**この 2 つだけ。**
+ *
+ *   ?t=コンニチワ&v=man
+ */
+// **話す人の一覧は外に置いてある**(tool/manual/voices.mjs)。解説ページと同じもの
+var VOICES = /*__VOICES__*/;
+var ja = (navigator.language || '').indexOf('ja') === 0;
+var q = new URLSearchParams(location.search);
+var text = (q.get('t') || '').trim();
+
+// **受け取るのは文と話す人だけ。**つまみ 1 本ずつは載せない —
+// つまみはこれから増えたり名前が変わったりする。
+// **前に送られたリンクが、あとから違う声で鳴る**ようになるのを避ける
+var found = null;
+var want = q.get('v');
+for (var v = 0; v < VOICES.length; v++) {
+  if (VOICES[v][0] === (want || VOICES[0][0])) { found = VOICES[v]; break; }
+}
+// 知らない名前で来たら既定の人にする。鳴らないより、違う声でも鳴るほうがいい
+if (!found) found = VOICES[0];
+var opts = found[2];
+
+var said = document.getElementById('said');
+var play = document.getElementById('play');
+var knobs = document.getElementById('knobs');
+
+play.textContent = ja ? '再生' : 'Play';
+document.getElementById('home').textContent = ja
+  ? '好きな言葉でしゃべらせてみる' : 'Make it say your own words';
+
+if (!text) {
+  said.className = 'said none';
+  said.textContent = ja ? 'リンクに文が書かれていません。' : 'This link carries no text.';
+  play.disabled = true;
+} else {
+  said.textContent = text;
+}
+
+// 誰がしゃべっているかだけ出す。**文が無いときは出さない** — 鳴らせないので
+if (!text) knobs.className = 'knobs empty';
+var who = document.createElement('li');
+var b = document.createElement('b');
+b.textContent = ja ? '話す人' : 'Voice';
+who.appendChild(b);
+who.appendChild(document.createTextNode(' ' + (ja ? found[1].ja : found[1].en)));
+knobs.appendChild(who);
+
+// **声は押されてから作る。**ブラウザは操作の前に音を出させない
+var voice = null;
+var back = null;
+play.addEventListener('click', function () {
+  if (!text) return;
+  if (!voice) voice = new MmsxxRetroTalk(new AudioContext());
+  voice.stopTalk();
+  clearTimeout(back);
+  if (play.classList.contains('on')) { play.classList.remove('on'); return; }
+  voice.talk(text, opts);
+  play.classList.add('on');
+  // 鳴り終わりは分からないので、長さから見当をつけて戻す
+  back = setTimeout(function () { play.classList.remove('on'); },
+    Math.max(1200, text.length * 220));
+});
+</script>

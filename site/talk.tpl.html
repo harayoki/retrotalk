@@ -1,0 +1,1686 @@
+<title>RetroTalk v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+JP:wght@400&display=swap">
+<style>
+/* 色は音色一覧のページと同じトークンをそのまま使う。**2 枚で 1 組**なので、
+   行き来したときに別のものに見えないほうがよい */
+/*__TOKENS_CSS__*/
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--mono); font-size:13px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:880px; margin:0 auto; padding:28px 20px 80px}
+header{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 16px}
+h1{font-size:20px; font-weight:600; margin:0; letter-spacing:-.01em}
+.sub{color:var(--dim); font-size:12px}
+
+.probe{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1px;
+  background:var(--line); border:1px solid var(--line); margin:16px 0 8px;
+}
+.probe div{background:var(--panel); padding:9px 12px; display:flex; justify-content:space-between; gap:10px}
+.probe b{font-weight:400; color:var(--dim); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase}
+
+.bar{display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin:14px 0 6px}
+/* 切り替えの帯(.seg)は style.mjs にある。**6 枚で同じもの** */
+
+
+.tag{
+  font-size:9.5px; letter-spacing:.09em; text-transform:uppercase;
+  border-radius:2px; padding:2px 6px; white-space:nowrap;
+}
+.tag.common{border:1px solid var(--line-hi); color:var(--dim)}
+.tag.own{border:1px solid var(--amber); color:var(--amber); background:transparent}
+/* **通していないもの。**書き方の話としては残すが、ここでは動かない */
+.tag.gone{border:1px dashed var(--line-hi); color:var(--dim)}
+.item.gone .syn{color:var(--dim)}
+
+/* **例の前置き。**書いていないものが何になっているかを、1 か所で言う */
+.prelude{
+  margin:0 0 8px; padding:11px 13px;
+  background:var(--panel); border:1px solid var(--line);
+}
+/* **説明が先、コードが後。**だから余白は上に付ける */
+.prelude .code{margin:9px 0 0; border:0; padding:0; background:none; color:var(--ink); font-weight:600}
+.prelude p{margin:0 0 6px; font-size:11.5px; color:var(--dim)}
+.prelude p:last-of-type{margin-bottom:0}
+.prelude p.jp{font-family:var(--jp)}
+/* **持ち帰り用。**前置きのすぐ下に置く */
+.prelude .get{margin:9px 0 0; font-size:11.5px}
+.prelude .get a{color:var(--ink); font-weight:600}
+.prelude .get span{color:var(--dim); margin-left:8px}
+h2{
+  font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim);
+  font-weight:400; margin:30px 0 0; padding-bottom:6px; border-bottom:1px solid var(--line);
+}
+.item{padding:14px 0; border-bottom:1px solid var(--line)}
+.head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+.syn{font-weight:600; font-size:13.5px}
+.own-mark{color:var(--amber)}
+/* まだ読み直していない説明の目印。**済んだら消す** */
+.todo{
+  font-size:9.5px; letter-spacing:.04em; color:#c0392b;
+  border:1px solid #c0392b; border-radius:2px; padding:0 4px; font-family:var(--jp);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .todo{color:#e8695a; border-color:#e8695a} }
+:root[data-theme="dark"] .todo{color:#e8695a; border-color:#e8695a}
+/* **枠いっぱいまで使う。**字数で折り返しを止めると、枠は右まで伸びているのに
+   文だけ途中で切れて、そこが白く空いて見える */
+.txt{margin:6px 0 0}
+.txt.jp{font-family:var(--jp)}
+.untranslated{font-style:normal; font-size:10px; color:var(--dim); opacity:.7; margin-left:7px}
+
+.demo{display:flex; align-items:flex-start; gap:8px; margin-top:9px}
+.play{
+  flex:none; width:22px; height:22px; cursor:pointer; font-size:10px; line-height:1;
+  background:var(--panel); color:var(--dim);
+  border:1px solid var(--line-hi); border-radius:3px;
+}
+.play:hover{border-color:var(--amber); color:var(--amber)}
+.play.on{background:var(--amber); border-color:var(--amber); color:var(--ground)}
+.code{
+  flex:1; min-width:0; background:var(--panel); border:1px solid var(--line);
+  padding:6px 9px; font-size:11px; color:var(--dim);
+  overflow-x:auto; white-space:pre;
+}
+
+/* **JS のところには JS と書く。**このページは
+   「文に書くもの」と「登録のときに渡すもの」が並ぶので、
+   どちらを読んでいるのか一目で分かるようにする(音色の作り方のページと同じ) */
+.tagbox{position:relative}
+.tagbox > .lang{
+  position:absolute; top:5px; right:8px; pointer-events:none;
+  font-size:9px; letter-spacing:.11em; color:var(--dim); opacity:.65;
+}
+
+/* **自分の文でしゃべらせる欄。**上のほうに置く —
+   下まで読んでから試すより、読む前に 1 回鳴らしたほうが早い */
+.tryout{margin:0 0 22px; padding:11px 13px; background:var(--panel); border:1px solid var(--line-hi)}
+.tryhead{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:7px}
+.tryhead > span:first-child{font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--dim)}
+.tryhead .hint{font-size:11px; color:var(--dim); opacity:.8; font-family:var(--jp)}
+.tryrow{display:flex; align-items:stretch; gap:8px}
+/* **書いたぶんだけ伸びる**(高さは JS が入れる)。台本を丸ごと貼ると
+   2 行では中が見えない。伸びきったら中で送る */
+#trytext{
+  flex:1; min-width:0; resize:vertical; max-height:260px; overflow-y:auto;
+  font-family:var(--jp); font-size:13px; line-height:1.6;
+  background:var(--sunk); color:var(--ink);
+  border:1px solid var(--line-hi); border-radius:3px; padding:6px 9px;
+}
+.tryrow .play{width:34px; height:auto}
+/* **書き出しは、鳴らすのと同じ並びに置く。**しゃべらせて、気に入ったら持って帰る */
+.tryrow .play.save{width:44px; font-size:9.5px; letter-spacing:.06em}
+.tryfoot{display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap}
+.tryfoot label{font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--dim)}
+#tryvoice{
+  font:inherit; font-size:11.5px; color:var(--ink);
+  background:var(--sunk); border:1px solid var(--line-hi); border-radius:3px; padding:3px 8px;
+}
+/* **読めない字があることは、押す前に言う。**押してから抜けるより先に見せる */
+.tryfoot .warn{
+  font-family:var(--jp); font-size:11px;
+  background:var(--amber); color:var(--bg); padding:2px 7px;
+}
+/* **言うことが無いときは、何も出さない。**
+   地色を敷いたので、空のままだと細い四角だけが残っていた */
+.tryfoot .warn:empty{display:none}
+/* **保存は字のほうがいい。**ボタンにすると、押すと鳴るほうと見分けが付かない。
+   WAV は 1 回鳴らすまで押せない — 何が保存されるのか決まっていないので。
+   リンクのほうは文と話す人だけで作れるので、鳴らさなくても押せる */
+.wavlink{
+  font:inherit; font-size:11px; color:var(--amber); background:none; border:0;
+  padding:0; text-decoration:underline; cursor:pointer;
+}
+.wavlink:disabled{color:var(--line-hi); text-decoration:none; cursor:default}
+
+/* しゃべる文は 1 行が長い。**折り返して全部見せる**(横に流すと読めない) */
+.demo .code.say{white-space:pre-wrap; word-break:break-all; font-family:var(--jp); font-size:12.5px}
+/* 渡し方の JS。**横に流さず折り返す** — 長い設定でも 1 画面で読めるように */
+.item .tagbox{margin-top:7px}
+.item .tagbox .code{white-space:pre-wrap; word-break:break-all}
+/* **JS は畳んでおく。**読みに来た人が見たいのは文のほうで、
+   コードは「必要になったら開く」もの。1 行だけ見せて、あることは分かるようにする */
+.item .tagbox.clip{cursor:pointer}
+/* **2 行目を半分だけ見せる。**1 行だけだと、続きがあることに気づけない。
+   `box-sizing:border-box` なので、上下の余白(6px ずつ)も足して高さを決める */
+.item .tagbox.clip .code{
+  line-height:1.55; max-height:calc(1.55em * 1.5 + 12px); overflow:hidden;
+}
+.item .tagbox.clip > .lang::after{content:' \25be'}
+.item .tagbox.clip.open .code{max-height:none}
+.item .tagbox.clip.open > .lang::after{content:' \25b4'}
+/* 声のノブ。**文の下に小さく**出す */
+.knob{margin-top:5px; font-size:10.5px; color:var(--dim)}
+/* **値を触る欄。**読むだけでは、どれがどう効くか分からない */
+.tune{display:flex; flex-wrap:wrap; gap:6px 10px; margin-top:6px}
+.tune label{
+  display:flex; align-items:center; gap:5px;
+  font-size:10.5px; color:var(--dim); letter-spacing:.02em;
+}
+.tune input, .tune select{
+  font:inherit; font-size:10.5px; color:var(--ink);
+  background:var(--bg); border:1px solid var(--line); padding:2px 4px; width:72px;
+}
+.tune input[type=checkbox]{width:auto}
+.tune .field{display:flex; align-items:center; gap:5px}
+.tune input[type=range]{width:88px; padding:0; border:0; background:none; accent-color:var(--ink)}
+.tune .now{font-style:normal; color:var(--ink); min-width:30px}
+.tune .reset{
+  font:inherit; font-size:10.5px; color:var(--dim); cursor:pointer;
+  background:var(--panel); border:1px solid var(--line); padding:2px 8px;
+}
+.tune .reset:hover{color:var(--ink); border-color:var(--line-hi)}
+/* **書き方を試す欄。**上の自由入力と同じ作りにして、見た目も合わせる */
+.trybox{margin-top:8px}
+.trybox .tryrow{display:flex; gap:8px; align-items:stretch}
+.trybox textarea{
+  flex:1; font:inherit; font-size:12px; font-family:var(--mono);
+  color:var(--ink); background:var(--sunk); border:1px solid var(--line-hi);
+  border-radius:3px; padding:6px 8px; resize:vertical;
+}
+.trybox .play:disabled{opacity:.35; cursor:default}
+.trybox .tagbox{margin-top:7px}
+.trybox .code{white-space:pre-wrap; word-break:break-all}
+.loadbox .pickrow{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.loadbox input[type=file]{font:inherit; font-size:11px; color:var(--dim)}
+.loadbox .pickmsg{font-family:var(--jp); font-size:11px; color:var(--dim)}
+.loadbox .pickmsg.bad{background:var(--amber); color:var(--bg); padding:2px 7px}
+.loadbox .tune{margin:6px 0}
+.loadbox .tune label{font-family:var(--jp)}
+.loadbox textarea{
+  flex:1; font:inherit; font-size:12px; font-family:var(--jp);
+  color:var(--ink); background:var(--bg); border:1px solid var(--line);
+  padding:6px 8px; resize:vertical;
+}
+/* **全部いじれる欄。**書き方も選べて、.wav にして持ち帰れる */
+/* **上の入力欄と同じ枠で囲う。**ページの終わりで急に地の色になると、
+   ここが「試すところ」だと分からない */
+.item.free{
+  padding:11px 13px; border-bottom:0;
+  background:var(--panel); border:1px solid var(--line-hi);
+}
+.freenote{margin:10px 0 0}
+.item.free .tryrow{display:flex; gap:8px; align-items:stretch}
+.item.free textarea{
+  flex:1; font:inherit; font-size:12.5px; font-family:var(--jp);
+  color:var(--ink); background:var(--bg); border:1px solid var(--line);
+  padding:6px 8px; resize:vertical;
+}
+.item.free .tagbox{margin-top:7px}
+.item.free .code{white-space:pre-wrap; word-break:break-all}
+.item.free .freefoot{margin-top:7px}
+.totop{margin:28px 0 0; font-size:11.5px}
+.totop a{color:var(--amber)}
+/* **これから読めるようになる書き方。**冒頭で言って、詳しくは下へ送る。
+   **ここだけ太く**する — 予定の話なので、いま出来ることと読み違えられると困る */
+.note{
+  margin:14px 0 0; font-size:11.5px; color:var(--ink); font-family:var(--jp);
+  font-weight:600;
+}
+.note a{color:var(--amber)}
+#oops{
+  display:none; margin:0 0 18px; padding:10px 13px;
+  background:var(--amber); border:1px solid var(--amber); color:var(--bg); font-size:11.5px;
+}
+</style>
+
+<div class="wrap">
+  <!--__NAV__-->
+  <div id="oops"></div>
+  <header>
+    <h1>RetroTalk v2</h1>
+    <span class="sub" id="sub"></span>
+  </header>
+
+  <div class="probe" id="probe"></div>
+
+  <div class="bar">
+    <div class="seg" id="lang"></div>
+    <div class="seg" id="theme"></div>
+  </div>
+
+
+  <!-- **自分の文でしゃべらせる。**読むより 1 回鳴らすほうが早い -->
+  <div class="tryout">
+    <div class="tryhead"><span id="trylabel"></span><span class="hint" id="tryhint"></span></div>
+    <div class="tryrow">
+      <button class="play" id="trysay" type="button" aria-label="Speak">&#9654;</button>
+      <textarea id="trytext" rows="2" spellcheck="false"></textarea>
+    </div>
+    <div class="tryfoot">
+      <label for="tryvoice" id="tryvlabel"></label>
+      <select id="tryvoice"></select>
+      <button class="wavlink" id="trywav" type="button" disabled></button>
+      <button class="wavlink" id="tryshare" type="button" disabled></button>
+      <span class="warn" id="trywarn"></span>
+    </div>
+  </div>
+
+  <div class="prelude" id="prelude"></div>
+  <p class="note" id="formatnote"></p>
+
+  <div id="body"></div>
+
+  <p class="totop"><a href="#" id="totop"></a></p>
+</div>
+
+<script>/*__ENGINE__*/</script>
+<script>
+// **配るものと同じ入口を使う。**ページで確かめた形が、そのまま渡る
+const $ = (s) => document.querySelector(s);
+const el = (t, c, x) => { const n = document.createElement(t); if (c) n.className = c; if (x != null) n.textContent = x; return n; };
+
+addEventListener('error', (e) => {
+  const box = $('#oops');
+  box.style.display = 'block';
+  box.textContent = 'Something broke: ' + (e.message || e);
+});
+
+// ---- 中身 ----
+//
+// **手で書いている。**読める字の表はエンジンから取り出せるが、
+// 「そう書くとどう聞こえるか」は取り出せない。
+//
+// `say` がしゃべらせる文、`opts` が声のノブ。**2 代目(engine 2)で鳴らす** —
+// 文の中の @p @s が効くのはそちらだけなので、ページの中で道を分けない。
+const V = { engine: 2 };
+const DOC = [
+{ h: { en: 'What it reads', ja: 'テキストの再生' } },
+{ syn: { ja: 'カナで入力', en: 'Write in kana' }, kind: 'text',
+  ja: 'しゃべらせたいテキストの指定は、カタカナか平仮名で書きます。漢字はうけつけません。',
+  en: 'Katakana or hiragana only. Kanji and English will not be read.',
+  say: 'ハロー ハロー。ワタシワ レトロトークエンジン デス。' },
+{ syn: { ja: '数字の扱い', en: 'How numbers are read' }, kind: 'text',
+  ja: '数字は入力できますが、読み方が限定されます。`123` は「イチ ニ サン」です。'
+    + '「ヒャク ニジュウ サン」とは読まれません。',
+  en: 'Digits can be typed, but their readings are fixed. '
+    + '123 is spoken "ichi ni san", never "hyaku nijuu san".',
+  say: 'バンゴウハ 0 3 5 8 デス。' },
+{ syn: { ja: '英字の扱い', en: 'How letters are read' }, kind: 'text',
+  ja: '英字は入力できますが、1 字ずつ読まれます。単語としては扱われません。'
+    + '`CPU` は「シーピーユー」、`RAM` は「ラム」ではなく「アールエーエム」です。',
+  en: 'Latin letters are spelled out one at a time, using their Japanese names. '
+    + 'CPU comes out as "shii pii yuu", and RAM as "aa ee emu" rather than as a word.',
+  say: 'CPU ト RAM ヲ カクニン シマス。' },
+{ syn: { ja: '"ー 〜 …"', en: 'Long vowels and trailing off' }, kind: 'text',
+  ja: '`ー` と `〜` は音を伸ばします。`〜` は語尾が揺れます。'
+    + '`…` または `...`(ピリオド 3 つ)は、弱い発音で間が空きます。',
+  en: 'The long mark \u30fc and the wave mark \uff5e both hold a vowel, '
+    + 'and \uff5e wavers as it fades. '
+    + 'The mark \u2026 or three periods fades the line out and leaves a gap.',
+  say: 'キャー。ヤッター。オカ〜サ〜ン。 ウン、ナンデモナイ…' },
+{ syn: { ja: '"空白 ＿ 、 。！？"', en: 'Pauses and intonation' }, kind: 'text',
+  ja: '空白や読点やアンダースコアを入力すると、音声の合間が開きます。'
+    + '(アンダースコアはスペースを見やすくするために使います。)'
+    + '`！` と `？` ではイントネーションが変わります。'
+    + '`！？` は 2 文字でひとつの記号として扱い、`？` より大きく上がります。'
+    + 'まとめてイントネーションを変えたいときは、`（ ）` で囲ってください。'
+    + '空白と `！` と `？` と `（ ）` は、全角でも半角でも受け付けます。',
+  en: 'A space, a comma \u3001 or an underscore opens a gap in the speech. '
+    + '(The underscore is there when you want the gaps to be visible.) '
+    + 'The marks \u3002\uff01\uff1f change how the line ends, and \uff01\uff1f counts as a '
+    + 'single mark that lifts higher than \uff1f alone. '
+    + 'To shift a whole phrase, wrap it in \uff08 \uff09. '
+    + 'Spaces, \uff01 \uff1f and \uff08 \uff09 are accepted full-width or half-width.',
+  say: 'アノネ、キイテ。 ソウナノ？ （ホントニ）！？ クギレバ モドリマス。ホラ＿モドリマシタ！' },
+{ syn: { ja: '括弧の扱い', en: 'How brackets work' }, kind: 'text',
+  ja: '括弧は、本文と歌とで扱いが変わります。'
+    + '本文では、抑揚をまとめてコントロールするのに使います。'
+    + '歌では、1 つの音符に複数の文字を対応させるときに使います。',
+  en: 'Brackets do two different jobs. In a spoken line they shift the intonation of everything '
+    + 'inside. In a song they put several kana on one note.',
+  say: 'ソウナンダ！（ソウナンダ）！' },
+{ syn: { ja: '"＞ ＜"', en: 'Raising and lowering' }, kind: 'text',
+  ja: '音の高さを上下にコントロールします。句読点で元に戻ります。'
+    + '半角、全角どちらでも受け付けます。',
+  en: 'The marks \uff1e and \uff1c raise and lower the pitch, and it returns to normal at the '
+    + 'next \u3001 or \u3002 Full-width and half-width both work.',
+  say: 'コレガ フツウ。コ＞レ＞ワ＞ ア＞ガ＞リ＞マ＞ス。コ＜レ＜ワ＜ サ＜ガ＜リ＜マ＜ス。' },
+
+{ h: { en: 'Special syntax', ja: '特殊な文法' } },
+{ syn: '@p<Hz>', kind: 'own',
+  ja: '声の高さをヘルツで指定します。デフォルト値は 280 です。',
+  en: 'Sets the pitch in hertz. The default is 280.',
+  say: 'ワタシデス。@p180 イエ、ワタシデス。' },
+{ syn: '@s<%>', kind: 'own',
+  ja: '話す速度をコントロールします。100 が等倍で、150 は 1.5 倍になります。',
+  en: 'Controls the speaking rate. 100 is normal, 150 is one and a half times as fast.',
+  say: 'ニゲロー。@s150 ハヤク ハヤク。@s70 マニアワナイ。' },
+{ syn: '@v<0-15>', kind: 'own',
+  ja: '音量を 0-15 の 16 段階で指定します。デフォルト値は 10 です。',
+  en: 'Sets the volume in sixteen steps, 0 to 15. The default is 10.',
+  say: 'キイテクダサイ。@v6 ダレニモ イワナイデ。@v15 タノミマシタヨ。' },
+
+{ h: { en: 'Controlling the accent', ja: 'アクセントの制御' }, tune: true },
+{ syn: { ja: '基本的なアクセント制御', en: 'Accent basics' }, kind: 'text',
+  ja: '声の高さは、最初に少し上がってからだんだん下がります'
+    + '(JavaScript パラメータで挙動は変えられます)。'
+    + '文に句読点が入ると抑揚はリセットされます。'
+    + '`！` と `？` と `！？` は文末の音程や音長を変化させます。'
+    + 'カッコ `（ ）` で囲んだ範囲は抑揚が抑えられ、'
+    + '後ろに `！` や `？` がついた場合はかっこのなかみがまとめて影響を受けます。'
+    + '`＞` `＜` は直接音程の高さを上下にコントロールできます。',
+  en: 'The pitch lifts a little at the start of a line and then falls away; JavaScript options '
+    + 'change that shape. Each \u3001 or \u3002 starts it over. \uff01 \uff1f and \uff01\uff1f '
+    + 'each change the pitch and the length at the end of a line. Inside \uff08 \uff09 the pitch '
+    + 'is held flat, and a following \uff01 or \uff1f acts on the whole bracketed part at once. '
+    + '\uff1e and \uff1c move the pitch up and down directly.',
+  say: 'コンニチワ。ゲンキ？ （スゴク）ゲンキ！ ソ＞レ＞ワ＞ ヨカッタ。' },
+{ syn: { ja: 'AquesTalk風の制御', en: 'AquesTalk-style accent marks' }, kind: 'text',
+  ja: 'AquesTalk風のアクセント制御が行えます。'
+    + "`'` はアクセント指定で、その音の直後にアクセントが下がります。"
+    + '`/` はアクセントの区切り、`+` は前の区画にアクセントを続けます。'
+    + 'AquesTalk では `_` が文末で無声音(母音なし)を作る記号として扱われますが、'
+    + 'そもそも RetroTalk では文末がデフォルトで無声音になります。'
+    + '`_` は無音を再生の意味になります。'
+    + '逆に母音を有効にしたい場合は `^` を指定します。'
+    + '(`^` は RetroTalk 専用の制御文字です。)',
+  en: 'These are AquesTalk-style accent marks. An apostrophe sets the accent, and the pitch drops '
+    + 'right after that mora. A slash divides accent phrases and a plus carries the accent on from '
+    + 'the phrase before. An underscore devoices the end of a phrase in AquesTalk; RetroTalk does '
+    + 'that by rule already, so here it is a silent gap instead. To keep a vowel the rule would '
+    + "drop, write a caret \u2014 that one is RetroTalk's own.",
+  tryBox: { rows: 2,
+    noJs: true,
+    text: 'コレガ ア\u2019クセント/ノ イチ +デス。ソウナンデ^ス。ユック\u2019リシテイッテネ！' } },
+
+{ syn: { ja: 'アクセントの移動幅指定', en: 'How far one mark moves' }, kind: 'js',
+  knobs: ['tuneStep'],
+  ja: '`＞` `＜` 1 つで動く音程の量を半音単位で指定できます。デフォルトは 1 です。',
+  en: 'Sets how far one \uff1e or \uff1c moves the pitch, in semitones. The default is 1.',
+  say: 'ソレ、ド＞ン＞ド＞ン タカク ナリマス。＜＜＜＜モドッタ。 ワ＞＞ア＜＜ア＞＞ア＜＜イ',
+  opts: { tuneStep: 4 } },
+
+{ h: { en: 'Watch out for these', ja: '注意する記述' } },
+{ syn: { ja: '単位のある数字', en: 'Numbers with units' }, kind: 'gone',
+  ja: '数字の読みは自動で調整されません。`4ガツ 4カ` は「ヨンガツ ヨンカ」になります。'
+    + '「シガツ ヨッカ」とカナで記述してください。',
+  en: 'Readings are not adjusted for context. 4\u30ac\u30c4 4\u30ab comes out as '
+    + '"yon gatsu yon ka". Write it in kana as \u30b7\u30ac\u30c4 \u30e8\u30c3\u30ab.',
+  say: 'キョウワ 4ガツ 4カ デス。ジャナイ、シガツヨッカデス。' },
+{ syn: { ja: '漢字と半角カナ', en: 'Kanji and half-width kana' }, kind: 'gone',
+  ja: '漢字と半角カナは、どちらも無視されます。平仮名は発音されます。',
+  en: 'Kanji and half-width kana are both ignored. Hiragana is spoken.',
+  say: '漢字わｶﾝｼﾞのカンジ。' },
+{ syn: { ja: 'は・へ・を 他', en: 'The particles \u30cf \u30d8 \u30f2' }, kind: 'gone',
+  ja: '`ハ` と `ヘ` は、いつでも HA と HE として発音されます。'
+    + '`ワタシハユメヲカナエルタビヘデル` は `ワタシワユメヲカナエルタビエデル` と書きます。'
+    + '`ヲ` はそのままでよいです。'
+    + '`ゐ` `ヰ` は「イ」、`ゑ` `ヱ` は「エ」と発音されます。',
+  en: '\u30cf and \u30d8 are always pronounced "ha" and "he", so write \u30ef and \u30a8 '
+    + 'where a particle is meant. \u30f2 can be left as it is. '
+    + 'The old kana \u3090 \u30f0 are pronounced "i", and \u3091 \u30f1 "e".',
+  say: 'ワタシハ ユメヲカナエル タビヘデル。モトイ、ワタシワ タビエ イキタイ。' },
+
+{ h: { en: 'Voice settings (JS)', ja: '声のカスタマイズ(JS)' }, tune: true },
+{ syn: { ja: 'ピッチとスピード', en: 'Pitch and speed' }, kind: 'own', knobs: ['pitch', 'speed'],
+  ja: '`pitch` は声の高さ、`speed` は話す速さを調整する JavaScript パラメータです。'
+    + '文の頭に `@p` `@s` を書いたのと同じです。'
+    + '文の途中に書いた `@p` `@s` のほうが優先されます。',
+  en: 'pitch sets the voice height and speed the rate, both passed in from JavaScript. '
+    + 'They amount to writing @p or @s at the head of the line, '
+    + 'and marks written inside the line take over from there.',
+  say: 'コエノ タカサダケヲ カエマシタ。',
+  opts: { pitch: 165 },
+  says: [
+    { say: 'ハヤサダケヲ カエマシタ。', opts: { speed: 1.5 } },
+  ] },
+{ syn: { ja: 'ピッチ調整', en: 'Pitch shift' }, kind: 'own', knobs: ['pitchShift'],
+  ja: '文章全体の音の高さを、半音単位で上げ下げします。'
+    + '`pitch` は話し始めの高さの指定で、`@p` で音程指定があると無効になりますが、'
+    + '`pitchShift` は `@p` の音程指定ごと調整できます。',
+  en: 'Moves the pitch of the whole line up or down in semitones. pitch only sets where the line '
+    + 'starts, and a written @p overrides it; pitchShift moves those written values too.',
+  say: 'ヒクイ コエ。@p320 タカイ コエ。',
+  opts: { pitch: 160, pitchShift: 0 } },
+{ syn: { ja: '音量とスピードの調整', en: 'Volume and speed shift' }, kind: 'own',
+  knobs: ['volumeShift', 'speedShift'],
+  ja: '`volumeShift` が音量の調整、`speedShift` がスピードの調整です。'
+    + '`pitchShift` と同じく文章全体をまとめて調整できます。',
+  en: 'volumeShift moves the level and speedShift the rate. '
+    + 'Like pitchShift, they move the whole line at once, marks and all.',
+  say: 'キイテクダサイ。@v6 ダレニモ イワナイデ。@s150 イソギマス。',
+  opts: { pitch: 250, volumeShift: 0, speedShift: 1 } },
+{ syn: { ja: '声の太さの指定', en: 'Formant shift' }, kind: 'own', knobs: ['formantShift'],
+  ja: '`formantShift` は声色の調整です。音程はかわりませんが、太い声〜細い声で変化します。'
+    + '男性は −4、女性は +2、子どもは +5 程度が一応の目安です。',
+  en: 'formantShift changes the timbre. The pitch stays where it is; what moves is how thick or '
+    + 'thin the voice sounds. Around \u22124 for a man, +2 for a woman, +5 for a child, '
+    + 'as a rough guide.',
+  say: 'オナジ タカサデモ ベツジンニ ナリマス。',
+  opts: { pitch: 250, formantShift: 5 } },
+{ syn: { ja: 'かすれ声とだみ声', en: 'Breath and jitter' }, kind: 'own', knobs: ['breath', 'jitter'],
+  ja: '`breath` は声に息を混ぜます。上げるとかすれ声、ささやき声に近づきます。'
+    + '`jitter` は声の高さをランダムに揺らします。上げるとがらがら声になります。'
+    + 'どちらも 少しの値で声が大きく変化します。',
+  en: 'breath mixes air into the voice; raise it for a rasp or a whisper. '
+    + 'jitter jogs the pitch at random; raise it for a growl. '
+    + 'A little of either goes a long way.',
+  say: 'ノドガ カレマシタ。オアアアアアアアア〜。',
+  opts: { pitch: 150, formantShift: -4, breath: 0.35, jitter: 0.3 } },
+{ syn: { ja: '抑揚のコントロール', en: 'Rise and fall' }, kind: 'own', knobs: ['fall', 'rise'],
+  ja: '文章を話している間、音程は最初上昇してから下降します。'
+    + 'この上下動の大きさをコントロールするパラメータが `rise` と `fall` です。'
+    + '`rise` は最初の上昇具合、`fall` はその後の下降具合です。'
+    + '両方 0 にすると抑揚のない棒読みで音声がながれます。'
+    + '両パラメータとも歌唱モードでは値が無視されます。',
+  en: 'While a line is spoken the pitch climbs at first and then falls away. rise and fall set how '
+    + 'far it moves: rise is the climb, fall the drop that follows. Set both to 0 and the line is '
+    + 'read flat. Both are ignored while singing.',
+  say: 'ワレワレワ ウチュウジンデアル キエテ ・ コシ ・ キレキレテ',
+  opts: { pitch: 300, fall: 0, rise: 0 } },
+{ syn: { ja: '声のデジタルぽさ', en: 'Digital roughness' }, kind: 'own',
+  knobs: ['interp', 'frame'],
+  ja: '`frame` の値を上げていくとデジタルぽさがましたような粗い音声になります。'
+    + '`interp` を ON にするとその粗さを補完して滑らかな声になります'
+    + '(同時に聞き取りづらくなります)。'
+    + '`interp` が OFF で `frame` の値が小さい時とはまた違った味わいが出せます。',
+  en: 'Raise frame and the voice turns coarse, as if the machine were slower. Turn interp on and '
+    + 'those gaps are filled in, smoothing the voice out and making it harder to follow at the '
+    + 'same time. That gives a different flavour again from leaving interp off with a small frame.',
+  say: 'スキスキスー_スキスー_スキスー',
+  opts: { pitch: 220, interp: false, frame: 0.03 } },
+{ syn: { ja: '音質の粗さ', en: 'Bit depth' }, kind: 'own', knobs: ['bits'],
+  ja: '音質を設定します。小さくするほどざらつきますが、'
+    + '`0` はざらつきなしの意味で最も綺麗な音になります。',
+  en: 'Sets the grain of the sound. The lower it is the grittier it gets, '
+    + 'except 0, which means no grain at all and gives the cleanest sound.',
+  say: 'ザラザラノ コエ デス。',
+  opts: { pitch: 220, bits: 4 } },
+{ syn: { ja: '金属質な声', en: 'Ring modulation' }, kind: 'own', knobs: ['ring'],
+  ja: '`ring` パラメータは音声に別の音を掛け合わせる度合いです。'
+    + '値をあげていくと、金属的な音になります。'
+    + '20〜80Hz あたりまでは言葉が聞き取れます。',
+  en: 'ring is how much of another tone is multiplied into the voice. Raise it and the sound turns '
+    + 'metallic. Words still carry somewhere between 20 and 80Hz.',
+  say: 'ハッ＿ハッ＿ハッ＿ハ＿＿オ＿マエ＿ワヨ＿ワイ＿＿ ハッ＿ハッ＿ハッ＿ハ。',
+  opts: { pitch: 200, ring: 55 } },
+
+{ h: { en: 'Singing (JS)', ja: '歌わせる(JS)' } },
+{ syn: { ja: '歌わせる', en: 'Singing' }, kind: 'own', knobs: ['sing'],
+  ja: '指定した文章に音程をつけて歌わせる事ができます。あまりリズム感はよくありません。'
+    + '音程は別途 MML という記法を使って `sing` パラメータに指定します。'
+    + '文章内にある音程や速度の指定は MML 指定で上書きされます。'
+    + '歌にする際は、特別なテキスト記述ルールがいくつか追加でされます。'
+    + '`（ ）` でくくった内部に書いた文章は 1 音で歌われます。'
+    + '`ー` や `〜` など音を伸ばすテキストは無視されます(`ッ` は無音として残ります)。',
+  en: 'A line can be sung to a tune. The rhythm is not its strong point. The tune is written '
+    + 'separately in sing, using MML, and it overrides any pitch or speed written in the line '
+    + 'itself. Singing also adds a few rules to the text: whatever sits inside \uff08 \uff09 is '
+    + 'sung on one note, and marks that hold a vowel, \u30fc and \uff5e, are ignored '
+    + '(\u30c3 still leaves its silence).',
+  say: 'サクラサクラノヤマモサトオモ ミワタスカギイリ',
+  opts: {
+    sing: 't120 v9 q7 l4 o3 g g a2 g g a2 g a b- a g a8 g8 e-2 d o2 b- o3 d e- d d8 o2 b-8 a2' } },
+{ syn: { ja: 'ハモって歌わせる', en: 'Singing in harmony' }, kind: 'own',
+  ja: '複数人同時に歌わせる事ができます。'
+    + 'JavaScript コードは実装の都合で少し特殊になります。',
+  en: 'Several voices can sing at once. The JavaScript for it looks a little unusual, '
+    + 'for reasons of how it is built.',
+  say: 'サクラサクラノヤマモサトオモ ミワタスカギイリ',
+  opts: {
+    sing: 't120 v9 q7 l4 o3 g g a2 g g a2 g a b- a g a8 g8 e-2 d o2 b- o3 d e- d d8 o2 b-8 a2' },
+  opts2: {
+    sing: 't120 v7 q7 l4 o4 d d e2 d d e2 d e f e d e8 d8 o3 b-2 a f a b- a a8 f8 e2' } },
+{ h: { en: 'Small MML for singing', ja: '歌唱用簡易MML' } },
+{ syn: { ja: '歌唱用MMLの書き方', en: 'The MML used for singing' }, kind: 'own',
+  ja: '`sing` パラメータに指定する MML 形式の楽曲データです。'
+    + '`cdefgab` が音の高さ、`#` `+` で半音上げ、`-` で半音下げます。'
+    + '`o` でオクターブ指定、`>` `<` でオクターブを上下します。'
+    + '数字は音長で、`.` をつけると 1.5 倍の長さになります。'
+    + '`r` は休符です。休符は発生する言葉とリンクせず、無音時間の指定となります。'
+    + 'その他 `l` `t` `&` `v` `q` などが使えるので、一般の MML 記法の解説を参照してください。',
+  en: 'The tune passed to sing, written as MML. cdefgab are the notes, # or + raises a semitone '
+    + 'and - lowers one. o sets the octave and > < move it. A number is the length, and a dot '
+    + 'makes it half again as long. r is a rest: it takes no kana, only silence. '
+    + 'l, t, &, v and q work as well \u2014 any guide to MML covers them.',
+  say: 'かえるのうたが きこえてくるよ (クヮ)(クヮ)(クヮ)(クヮ) ケケケケケケケケ (クヮ)(クヮ)(クヮ)',
+  opts: {
+    sing: 't120 v12 q7 l4 o3 c d e f e d c2 e f g a g f e2 c r c r c r c r'
+      + ' c8 c8 d8 d8 e8 e8 f8 f8 e d c4' } },
+{ h: { en: 'Delivery settings (JS)', ja: '話し方・歌い方の調整(JS)' } },
+{ syn: "style: 'flat'", kind: 'own',
+  ja: '`style` パラメータで発声の仕方を指定できます。'
+    + '`flat` はデフォルトの値で、抑揚のないしゃべり方をします。'
+    + 'このまま歌わせるとややうるさいので、別のスタイル指定をお勧めします。',
+  en: 'style sets how each note is voiced. flat is the default and speaks without any shaping. '
+    + 'Sung as it is, it comes out a little harsh, so one of the other styles is worth trying.',
+  say: 'モウカリマッカ？ ボチボチデンナーー。',
+  opts: { pitch: 250, style: 'flat' } },
+{ syn: "style: 'adsr'", kind: 'own',
+  ja: '`adsr` を指定すると、音量に楽器のような抑揚がつくようになり、'
+    + '唄として聞き取りやすくなります。'
+    + '歌唱向けで、通常の音声に指定すると聞き取りづらくなります。',
+  en: 'With adsr each note swells and fades like an instrument, which makes a sung line easier to '
+    + 'follow. It is meant for singing; on ordinary speech it gets harder to make out.',
+  say: 'サイタサイタチューリップノハナガ',
+  opts: { sing: 't120 v9 l4 o3 c d e2 c d e2 g e d c d e d2', style: 'adsr' } },
+{ syn: "style: 'vibrato'", kind: 'own',
+  ja: '`adsr` と出だしは同じですが、長く伸びる音符でビブラートがかかるようになります。',
+  en: 'It starts out the same as adsr, but a note held long enough picks up a vibrato.',
+  say: 'サイタサイタチューリップノハナガ',
+  opts: { sing: 't120 v9 l4 o3 c d e2 c d e2 g e d c d e d2', style: 'vibrato' } },
+
+{ h: { en: 'Beyond this page', ja: 'その他 / FAQ' } },
+{ syn: '漢字をよませたい', kind: 'gone',
+  ja: 'このツールでは漢字をかなに変換することはできません。'
+    + '自力でがんばるか、外部サービスや API を使って変換すると良いです。'
+    + 'VOICEVOX(ずんだもん他の声を簡単に扱う事ができるフリーソフト)を使っているなら、'
+    + 'そちらで漢字をかなとして理解させることができ、'
+    + 'さらにそこからテキストデータを書き出したり、'
+    + 'VOICEVOX プロジェクトファイルを直接このツールに読み込ませる事が可能です。'
+    + '後述の VOICEVOX 連携を参照してください。',
+  en: 'This tool cannot turn kanji into kana. Do it by hand, or use an outside service or API. '
+    + 'If you already use VOICEVOX (free software for the Zundamon voices and others), it reads '
+    + 'kanji for you: you can copy the kana out of it, or hand its project file straight to this '
+    + 'tool. See the VOICEVOX section further down.' },
+{ syn: { ja: '自作コンテンツ・ゲームで使いたい', en: 'Using it in your own game or content' },
+  kind: 'gone',
+  ja: '可能です。エンジンは MIT ライセンスなので、自由に使えます。'
+    + 'ページの最後にあるリリースページから受け取って、'
+    + 'リポジトリの README にしたがってください。',
+  en: 'You can. The engine is MIT-licensed, so it is yours to use. Get it from the releases page '
+    + 'linked at the foot of this page, and follow the README in the repository.' },
+{ syn: { ja: '動画コンテンツでボイスを使いたい', en: 'Using the voice in a video' },
+  kind: 'gone',
+  ja: '可能です。書き出した音声データの利用に制限はありません。'
+    + 'このページで WAV を書き出して使うのが手っ取り早いですが、'
+    + 'プログラムを書けばセリフデータから一括でバッチ書き出しなどもできるでしょう。'
+    + 'WAV 書き出しには `MmsxxRetroTalk.renderTalk` が使えます。',
+  en: 'You can. There are no strings on the audio you export. Saving a WAV from this page is the '
+    + 'quickest route; with a little code you could batch the whole script out at once. '
+    + 'MmsxxRetroTalk.renderTalk gives you the waveform to write.' },
+{ syn: { ja: '再生前の遅延を無くしたい', en: 'Removing the delay before it plays' }, kind: 'js',
+  ja: '`voice.talk` 命令を使っての音声再生は便利ですが、再生に若干の遅延が発生します。'
+    + '内部で構文の解釈と波形データの作成をしているからです。'
+    + '波形データの作成までを先にすませておくことで、遅延のない再生や'
+    + '同じ音声を再生する際の処理の無駄をなくすことができます。',
+  en: 'voice.talk is the convenient way to play a line, but it starts with a slight delay: '
+    + 'the text is parsed and the waveform built inside that call. Do the building ahead of time '
+    + 'and playback starts without it, and replaying the same line costs nothing.',
+  js: '// 先に登録して、波形データまで作っておきます\n'
+    + "voice.defineTalk('hello', 'コンニチワ');\n"
+    + "voice.prepareTalk('hello');\n"
+    + '// 好きなタイミングで、遅延なく鳴らします\n'
+    + "voice.playTalk('hello');" },
+{ syn: { ja: '無駄なメモリを開放したい', en: 'Freeing memory you are done with' }, kind: 'js',
+  ja: '作成された波形データは、そのままメモリに残り続けます。'
+    + '(`voice.talk` 命令で作った波形データは毎回削除されます。)'
+    + '明示的に削除するには下記のようにします。',
+  en: 'A waveform that has been built stays in memory. (What voice.talk builds is dropped every '
+    + 'time.) To drop the rest yourself:',
+  js: "voice.forgetTalk('hello');            // 名前を指定して破棄\n"
+    + "voice.forgetTalk(['demo1', 'demo2']); // まとめて破棄\n"
+    + 'voice.forgetTalk();                   // 全て破棄' },
+{ h: { en: 'Using VOICEVOX data', ja: 'VOICEVOXのデータを利用する' }, id: 'formats' },
+{ syn: { ja: 'VOICEVOXプロジェクトファイルのコンバート(β)',
+    en: 'Converting a VOICEVOX project (β)' }, kind: 'own',
+  ja: 'VOICEVOX のプロジェクトファイル(`.vvproj`)を RetroTalk 用のテキストデータとして'
+    + 'コンバートすることができます。持ち込める物は、話す音声の高さと長さです。'
+    + '`@p` と `@s` および句読点に変換されます。話者の設定は読み込めません。'
+    + '音の高さによっては聞き取りづらくなるので、その際は `pitchShift` で調整してください。'
+    + 'コンバートプログラムが提供されますが、手っ取り早くはここで試す事ができます。'
+    + 'ファイルを選択ボタンで `.vvproj` ファイルを読み込むと、'
+    + '下記のフリーフォームにテキストが入力されます。'
+    + '(漢字のカナ変換目的などで)音程や音長データがいらない場合、'
+    + 'チェックボックスを OFF にしてください。',
+  en: 'A VOICEVOX project file (.vvproj) can be converted into text for RetroTalk. What comes '
+    + 'across is the pitch and the length of each mora, written as @p and @s plus punctuation; '
+    + 'the speaker settings do not. Some pitches come out hard to follow, in which case adjust '
+    + 'with pitchShift. A converter is provided, but the quickest way is to try it here: pick a '
+    + '.vvproj with the file button and the text lands in the freeform panel below. Turn the '
+    + 'checkboxes off if you only want the reading (to get kanji into kana, say).',
+  loadBox: true },
+];
+
+/**
+ * 冒頭の前置き。**コードより先に、何の話かを言う。**
+ *
+ * ここがいきなり JS だったころ、**何を読まされているのか分からない**と言われた
+ * (2026-09-04)。読む人はまだ、これが何で動くものかを知らない。
+ *
+ * **`**` のような印は書かない。**このページは書いた字をそのまま出すので、
+ * 太字にはならず、星がそのまま画面に出る。
+ */
+const PRELUDE = {
+  lead: {
+    en: 'Retro Talk is a voice engine for Japanese, written in JavaScript, with the voice of an '
+      + '80s Japanese computer. It can be built into a game or a web site. '
+      + 'The download is in [[the last section of this page]]; for how to set it up and for the '
+      + 'terms, see the README in the repository.',
+    ja: 'Retro Talk は JavaScript で動作する、80 年代マイコン風の声を発声する日本語ボイスエンジンです。'
+      + 'ゲームや web サイトに含めて使う事ができます。'
+      + 'ダウンロードは[[ページの最後のセクション]]から行えます。'
+      + '詳しい初期化・セットアップの方法とライセンスは、'
+      + 'リポジトリの README を参照してください。',
+  },
+  code: '<script src="retrotalk.min.js"><\/script>\n\n'
+    + "const voice = new MmsxxRetroTalk(new AudioContext());\n"
+    + "voice.talk('コンニチワ');",
+};
+
+/**
+ * **取りに行く先。**ここではもう配らない。
+ *
+ * 版を切るたびにページを作り直さずに済むよう、**いちばん新しいものが出る住所**にする。
+ */
+const RELEASES = 'https://github.com/harayoki/retrotalk/releases';
+
+/** API リファレンス。**あちらからはここへ来られるので、こちらからも行けるようにする** */
+const API_REF = 'https://harayoki.github.io/retrotalk/api/';
+
+// ---- 画面 ----
+let lang = (navigator.language || '').startsWith('ja') ? 'ja' : 'en';
+let theme = 'auto';
+let player = null, playing = null;
+
+async function engine() {
+  if (player) return player;
+  player = new MmsxxRetroTalk(new AudioContext());
+  await player.unlock();
+  return player;
+}
+/** **登録してから鳴らす。**同じ名前に上書きするので、押すたびに作り直す */
+/**
+ * **1 回作ったら使い回す。**
+ *
+ * 声はその場で組み立てているので、押すたびに作り直すと**同じ計算を毎回する**。
+ * `defineTalk` は名前ごとに覚えるので、**文ごとに別の名前で登録**しておけば
+ * 2 回目からは出来上がりが返る(`playTalk` の中で覚えている)。
+ *
+ * まとめて先に作らないのは、**押されない文まで作ることになる**から。
+ * 要るときに作って、そのあと取っておく。
+ */
+const made = new Set();
+async function play(d, btn) {
+  const p = await engine();
+  if (playing) { playing.classList.remove('on'); playing.textContent = '▶'; }
+  p.stopTalk();
+  if (playing === btn) { playing = null; return; }
+  // **番号は組むときに持たせる。**組ごとに写しを作っているので、
+  // ここで探すと見つからず(-1)、**別の項目と同じ名前になってしまう**
+  const id = '__x__' + d._i + '_' + (d._n || 0);
+  // **重ねる項目は 2 人ぶん登録する。**歌詞は同じで、旋律だけが違う
+  const ids = d.opts2 ? [id, id + 'b'] : [id];
+  if (!made.has(id)) {
+    p.defineTalk(id, d.say, { ...V, ...(d._live || d.opts || {}) });
+    if (d.opts2) p.defineTalk(id + 'b', d.say2 || d.say, { ...V, ...d.opts2 });
+    // **鳴らす前に、両方の波形を作っておく。**
+    // 作らずに続けて鳴らすと、2 人目は 1 人目の組み立てを待つぶんだけ遅れる
+    for (const x of ids) p.prepareTalk(x);
+    made.add(id);
+  }
+  p.maxTalk = ids.length;
+  for (const x of ids) p.playTalk(x);
+  btn.classList.add('on'); btn.textContent = '■';
+  playing = btn;
+  if (window.__probe) { const f = window.__probe; window.__probe = null; f(p); }
+}
+
+function say(box, d, cls) {
+  const ja = d.ja != null ? d.ja : d.noteJa;
+  const en = d.en != null ? d.en : d.note;
+  const want = lang === 'ja' ? ja : en;
+  const other = lang === 'ja' ? en : ja;
+  if (want) { box.appendChild(el('p', cls + (lang === 'ja' ? ' jp' : ''), want)); return; }
+  if (!other) return;
+  const p = el('p', cls + (lang === 'ja' ? '' : ' jp'), other);
+  p.appendChild(el('i', 'untranslated', lang === 'ja' ? '(まだ訳していない)' : '(not translated yet)'));
+  box.appendChild(p);
+}
+
+const KIND = {
+  text: ['common', 'Text'],
+  own: ['own', 'Voice'],
+  js: ['own', 'JS'],
+  gone: ['gone', 'Note'],
+};
+
+/**
+ * **おすすめの設定。**このページのノブを全部見せる前に、
+ * 「ふつうに使うならこれ」を 3 つだけ置く。
+ *
+ * `interp: false` を既定にしてあるのは、**それがこの声の顔**だから
+ * (滑らかにすると、よくある合成音声に近づいて持ち味が消える)。
+ */
+// **話す人の一覧は外に置いてある**(tool/manual/voices.mjs)。
+// 送られたリンクを開くページも同じものを読む
+const TRY_VOICES = /*__VOICES__*/;
+let tryVoice = 'woman';
+const TRY_TEXT = {
+  ja: 'コンバンチワワ。すきなもじをかいて、ひだりのボタンをおしてください。',
+  en: 'コンバンチワワ。すきなもじをかいて、ひだりのボタンをおしてください。',
+};
+
+/**
+ * **いまの文と設定を、送れる住所にする。**
+ *
+ * 送られた人は `s/` のページで聞くだけになる。あちらに入力欄は無い。
+ *
+ * **既定のままの値は書かない。**全部並べると、どこを触ったのか読めなくなるうえ、
+ * 既定が変わったときに古い値で固定されてしまう
+ *
+ * @param {string} text しゃべらせる文
+ * @param {string} voice 話す人の名前(`TRY_VOICES` の 1 つめ)
+ * @returns {string}
+ */
+function shareUrl(text, voice) {
+  const q = new URLSearchParams();
+  q.set('t', text);
+  if (voice && voice !== TRY_VOICES[0][0]) q.set('v', voice);
+  return new URL('s/?' + q, location.href).href;
+}
+
+/**
+ * 住所を写す札。**押すと写して、少しのあいだ写したと出す**
+ *
+ * @param {HTMLButtonElement} btn 札
+ * @param {() => string} make そのときの住所を作る
+ */
+function wireShare(btn, make) {
+  const label = () => (lang === 'ja' ? 'リンクをコピー' : 'Copy link');
+  btn.textContent = label();
+  btn.title = lang === 'ja'
+    ? 'いまの文と話す人で開けるリンクを写す' : 'Copy a link that opens this line with this voice';
+  btn.addEventListener('click', async () => {
+    const url = make();
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      btn.textContent = lang === 'ja' ? 'コピーしました' : 'Copied';
+    } catch {
+      // **写せないときは選ばせる。**許可を求める作りだと、断られたまま黙る
+      window.prompt(lang === 'ja' ? 'このリンクを送ってください' : 'Share this link', url);
+    }
+    clearTimeout(btn._t);
+    btn._t = setTimeout(() => { btn.textContent = label(); }, 1600);
+  });
+}
+
+/** 自分の文でしゃべらせる。**登録し直して鳴らす**(ほかの例と同じ道) */
+async function trySay(btn) {
+  const text = $('#trytext').value.trim();
+  if (!text) return;
+  const p = await engine();
+  if (playing) { playing.classList.remove('on'); playing.textContent = '\u25b6'; }
+  p.stopTalk();
+  if (playing === btn) { playing = null; return; }
+  const knobs = (TRY_VOICES.find((v) => v[0] === tryVoice) || TRY_VOICES[0])[2];
+  p.defineTalk('__try__', text, { ...V, ...knobs });
+  p.playTalk('__try__');
+  $('#trywav').disabled = false;
+  btn.classList.add('on'); btn.textContent = '\u25a0';
+  playing = btn;
+  // **しゃべり終わったら戻す。**押しっぱなしに見えると、次に押せないと思われる
+  clearTimeout(trySay._t);
+  trySay._t = setTimeout(() => {
+    if (playing === btn) { btn.classList.remove('on'); btn.textContent = '\u25b6'; playing = null; }
+  }, Math.max(1200, text.length * 140));
+}
+
+/**
+ * **しゃべらせたものを .wav にして持って帰る。**
+ *
+ * 鳴らす道とは別に、**その場でもう一度描く** — 鳴らしているのは
+ * AudioBuffer なので、そこから取り出すより作り直すほうが short。
+ * 書き出す周波数は**作ったときのまま**(約 9.9kHz)で、
+ * 伸ばして 44.1kHz にはしない。**粗さも含めてこの声**なので。
+ */
+/**
+ * **.wav にして保存する。**
+ *
+ * アーティファクトの中では、ページから始める保存が止められている。
+ * 抜け道の `downloads` は拡張子の一覧で通すものを決めていて、
+ * **`.wav` はそこに無い**(png / pdf / csv などはある)。
+ * つまりあの画面では、どう書いても落ちてこない。
+ *
+ * **それでも置いておく。**GitHub Pages に出したときと手元で開いたときは
+ * ふつうに落ちるので、無いほうが「そんな口は無い」に見える
+ */
+/**
+ * 文を .wav にして落とす。**書き出す口は 1 つにしておく**(2 か所で書くと片方が古くなる)
+ *
+ * @param {string} text しゃべらせる文
+ * @param {object} opts 声のノブ
+ * @param {string} name 保存する名前
+ */
+function saveWav(text, opts, name) {
+  if (!text) return;
+  const { rate, data } = MmsxxRetroTalk.renderTalk(text, opts);
+  // 16 ビットの RIFF。**エンジンの encodeWAV は AudioBuffer を受けるので、
+  // 同じ形に見せかけて渡す**(中で見ているのは 4 つだけ)
+  const bytes = MmsxxRetroTalk.encodeWAV({
+    sampleRate: rate, numberOfChannels: 1, length: data.length,
+    getChannelData: () => data,
+  });
+  const url = URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' }));
+  const a = el('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+async function tryWav() {
+  const knobs = (TRY_VOICES.find((v) => v[0] === tryVoice) || TRY_VOICES[0])[2];
+  saveWav($('#trytext').value.trim(), { ...knobs }, 'retrotalk.wav');
+}
+
+/**
+ * その項目が触る設定と、省いたときの値。
+ *
+ * **エンジンから読む。**ページに書き写すと、直したときにずれる。
+ * `syn` に並べた名前をそのまま引く(`@p` のような印は設定名ではないので出ない)。
+ */
+function defaultsFor(d) {
+  const D = MmsxxRetroTalk.TALK_DEFAULTS || {};
+  // **見出しが言葉になった項目は、名前を別に持つ**(`knobs`)。
+  // 見出しから拾うだけだと、日本語の見出しに変えたとたんに既定が消える
+  const names = (d.knobs
+    || String(typeof d.syn === 'string' ? d.syn : d.syn.en).split(/\s+/)).filter((k) => k in D);
+  if (!names.length) return null;
+  const val = (v) => (typeof v === 'string' ? "'" + v + "'" : String(v));
+  return (lang === 'ja' ? 'デフォルト値 ' : 'Default: ')
+    + names.map((k) => k + ' = ' + val(D[k])).join(' / ');
+}
+
+/** その項目を、そのまま書き写せる JS にする。**手で書いたものがあればそれ** */
+function jsFor(d) {
+  // 鳴らして見せる項目ではないところ(FAQ など)は、コードを手で書く
+  if (d.js) return d.js;
+  const val = (v) => (typeof v === 'string' ? "'" + v + "'" : String(v));
+  const knobs = (o) => Object.entries(o).map(([k, v]) => k + ': ' + val(v)).join(', ');
+  // **1 つ鳴らすだけなら `talk`。**名前は要らない
+  if (!d.opts2) return "voice.talk('" + d.say + "',\n  { " + knobs(d.opts) + ' });';
+  // 重ねるときだけ名前が要る(先に波形を作っておくため)
+  const def = (name, text, o) => "voice.defineTalk('" + name + "', '" + text + "',\n"
+    + '  { ' + knobs(o) + ' });';
+  // 重ねるときは、作ってから 2 つ続けて鳴らす
+  return '// 2 人歌わせる準備\n'
+    + 'voice.maxTalk = 2;\n'
+    + '// パート別に適宜、前処理、再生の流れをつくる\n'
+    + '// (talk メソッド 2 回連続実行では歌のタイミングがずれます)\n'
+    + def('demo1', d.say, d.opts) + '\n'
+    + def('demo2', d.say2 || d.say, d.opts2) + '\n'
+    + '// 前処理は少し時間を要します\n'
+    + "voice.prepareTalk(['demo1', 'demo2']);\n"
+    + '// 好きなタイミングで歌わせます\n'
+    + "voice.playTalk(['demo1', 'demo2']);";
+}
+
+function build() {
+  const pre = $('#prelude');
+  pre.textContent = '';
+  // **説明が先、コードが後。**読む人はまだ、これが何で動くものかを知らない
+  // **段落で分ける。**前置きが 2 つのことを言うので、続けて書くと読み飛ばされる
+  for (const par of String(PRELUDE.lead[lang] || PRELUDE.lead.en).split('\n\n')) {
+    const box = el('p', lang === 'ja' ? 'jp' : '');
+    // **`[[ ]]` で囲んだところは、その節への送り。**
+    // 「最後のセクション」と書いてあっても、そこまで自分で探させない
+    for (const [i, part] of par.split(/\[\[|\]\]/).entries()) {
+      if (i % 2) { const a = el('a', null, part); a.href = '#terms'; box.appendChild(a); }
+      else if (part) box.appendChild(document.createTextNode(part));
+    }
+    pre.appendChild(box);
+  }
+  const wrap = el('div', 'tagbox');
+  wrap.append(el('div', 'code', PRELUDE.code), el('span', 'lang', 'JS'));
+  pre.appendChild(wrap);
+
+  // **これから読めるようになる書き方。**送り先は下の見出し
+  const note = $('#formatnote');
+  note.textContent = '';
+  note.classList.toggle('jp', lang === 'ja');
+  const link = el('a', null, lang === 'ja' ? '詳細' : 'Details');
+  link.href = '#formats';
+  note.append(document.createTextNode(lang === 'ja'
+    ? '\u203b '
+      + 'VOICEVOX(ずんだもん他)のプロジェクトファイル読み込みに対応しています。'
+    : '\u203b VOICEVOX project files can be read in. '), link);
+  // **全部いじれる欄が下にあることを、上で言っておく。**
+  // 最後まで読まないと出会えないと、そこまで行かない人には無いのと同じ
+  note.appendChild(el('br'));
+  const far = el('a', null, lang === 'ja' ? 'ページの最後' : 'the bottom of the page');
+  far.href = '#freeform';
+  note.append(document.createTextNode(lang === 'ja'
+    ? '\u203b 全てのパラメータが設定できるフリーフォームが '
+    : '\u203b The freeform panel, where every knob is yours, is at '), far);
+  if (lang === 'ja') note.append(document.createTextNode(' にあります'));
+
+  // 副題。何のエンジンかを 1 行で言う
+  const sub = $('#sub');
+  sub.textContent = lang === 'ja' ? '80年代マイコン風の日本語ボイスエンジン'
+    : 'a Japanese voice engine with the sound of an 80s computer';
+  sub.classList.toggle('jp', lang === 'ja');
+
+  // **上まで戻れるようにする。**長いので、読み終えたところから戻る道が要る
+  const top = $('#totop');
+  top.textContent = lang === 'ja' ? 'ページの先頭へ戻る' : 'Back to the top';
+  top.parentNode.classList.toggle('jp', lang === 'ja');
+
+  // 自分の文でしゃべらせる欄
+  $('#trylabel').textContent = lang === 'ja' ? '自由入力欄' : 'Say your own';
+  $('#tryhint').textContent = lang === 'ja' ? '' : 'Katakana only';
+  const box = $('#trytext');
+  if (!box.value) box.value = TRY_TEXT[lang] || TRY_TEXT.en;
+  // **書いたぶんだけ伸ばす。**いったん潰してから測らないと、縮むほうに動かない
+  const grow = () => {
+    box.style.height = 'auto';
+    // `box-sizing:border-box` なので**枠のぶんを足す。**
+    // scrollHeight は枠を含まないので、そのまま入れると 2px 足りず送りが出る
+    const edge = box.offsetHeight - box.clientHeight;
+    box.style.height = (box.scrollHeight + edge) + 'px';
+  };
+  box.addEventListener('input', grow);
+  grow();
+  const btn = $('#trysay');
+  btn.onclick = () => trySay(btn);
+  $('#trywav').onclick = () => tryWav();
+  const shareBtn = $('#tryshare');
+  shareBtn.disabled = !box.value.trim();
+  box.addEventListener('input', () => { shareBtn.disabled = !box.value.trim(); });
+  wireShare(shareBtn, () => {
+    const text = $('#trytext').value.trim();
+    return text ? shareUrl(text, tryVoice) : '';
+  });
+  $('#trywav').textContent = lang === 'ja' ? 'WAVを保存' : 'Save as WAV';
+  $('#trywav').title = lang === 'ja'
+    ? 'いま鳴らした文を .wav にして保存' : 'Save the line you just played as .wav';
+  $('#tryvlabel').textContent = lang === 'ja' ? '話す人' : 'Who is speaking';
+  const sel = $('#tryvoice');
+  sel.textContent = '';
+  for (const [val, label] of TRY_VOICES) {
+    const o = el('option', null, label[lang] || label.en);
+    o.value = val;
+    if (val === tryVoice) o.selected = true;
+    sel.appendChild(o);
+  }
+  sel.onchange = () => { tryVoice = sel.value; };
+  // **読めない字は押す前に言う。**押してからそこだけ抜けるより早い
+  const warn = $('#trywarn');
+  const look = () => {
+    const got = MmsxxRetroTalk.checkTalk ? MmsxxRetroTalk.checkTalk(box.value) : { ok: true, unknown: [] };
+    if (got.ok) { warn.textContent = ''; return; }
+    const what = [...new Set(got.unknown.map((u) => u.ch))].slice(0, 6).join(' ');
+    warn.textContent = lang === 'ja'
+      ? `読めない字: ${what}(飛ばして鳴らします)`
+      : `Cannot read: ${what} (skipped)`;
+  };
+  box.oninput = look;
+  look();
+
+  const body = $('#body');
+  body.textContent = '';
+  let tuning = false;
+  for (const d of DOC) {
+    if (d.h) {
+      const h = el('h2', null, d.h[lang] || d.h.en);
+      if (d.id) h.id = d.id;                  // 冒頭から送る先
+      body.appendChild(h);
+      // **その節から、値をその場で変えられるようにする**(見出しが決める)
+      tuning = !!d.tune;
+      continue;
+    }
+    const box = el('div', 'item' + (d.kind === 'gone' ? ' gone' : ''));
+    const head = el('div', 'head');
+    // 見出しは記号のことが多いので 1 つの文字列だが、**言葉で書く行だけ**
+    // 日英で別に持つ(`{ ja, en }`)
+    const syn = typeof d.syn === 'string' ? d.syn : (d.syn[lang] || d.syn.en);
+    head.appendChild(el('span', 'syn' + (d.kind === 'own' ? ' own-mark' : ''), syn));
+    const kind = KIND[d.kind] || KIND.text;
+    head.appendChild(el('span', 'tag ' + kind[0], kind[1]));
+    // **まだ読み直していない説明に、目印を残す。**
+    // 直したものと直していないものが混ざっているあいだ、どこまで来たかが
+    // 見て分かるようにしておく(全部済んだら `todo` ごと消す)
+    if (d.todo) head.appendChild(el('span', 'todo', 'TODO 書き直し'));
+    box.appendChild(head);
+    say(box, d, 'txt');
+    if (d.say) {
+      // **1 本ぶんを描く。**文と、渡し方と、その場で触れるつまみまでが 1 組。
+      // **文ごとに設定が違うことがある**(`says` に `{ say, opts }` で書く)ので、
+      // 組ごとに描く — 1 つのつまみが別の文に効いているように見えないように
+      const one = (o) => {
+        const demo = el('div', 'demo');
+        const b = el('button', 'play', '\u25b6');
+        b.type = 'button';
+        b.setAttribute('aria-label', 'Play ' + syn);
+        b.addEventListener('click', () => play(o, b));
+        demo.append(b, el('div', 'code say', o.say));
+        box.appendChild(demo);
+        // **声を変える項目は、渡し方まで見せる。**
+        // 文だけ見せても「これをどう渡すのか」が分からない、と言われた(2026-09-04)。
+        // **手で書かず、上の文と設定から組み立てる** — 書き写しの食い違いが出ない
+        if (o.js || ((o.kind === 'own' || o.kind === 'js') && o.opts)) {
+          const wrap = el('div', 'tagbox');
+          const js = jsFor(o);
+          const code = el('div', 'code', js);
+          wrap.append(code, el('span', 'lang', 'JS'));
+          // **畳むのは 2 行以上のときだけ。**1 行なら全部見えているので、
+          // 開け閉めする意味がない
+          if (js.includes('\n')) {
+            wrap.classList.add('clip');
+            wrap.addEventListener('click', () => wrap.classList.toggle('open'));
+          }
+          box.appendChild(wrap);
+          // **その場で値を変えて鳴らす。**読むだけでは、どれがどう効くか分からない
+          if (tuning && o.opts) box.appendChild(tuner(o, code));
+          // 省いたときの値。**触れる設定にだけ出す**
+          const def = defaultsFor(o);
+          if (def) box.appendChild(el('div', 'knob', def));
+        } else if (o.opts) {
+          box.appendChild(el('div', 'knob',
+            Object.entries(o.opts).map(([k, v]) => `${k}: ${v}`).join('  /  ')));
+        }
+      };
+      const at = DOC.indexOf(d);
+      one({ ...d, says: null, _i: at });
+      // **聞き比べたい文を、もう何本か置く。**印の効き方は並べて聞かないと分からない
+      for (const [n, extra] of (d.says || []).entries()) {
+        const line = typeof extra === 'string' ? extra : extra.say;
+        const o = { ...d, say: line, says: null, _i: at, _n: n + 1 };
+        if (typeof extra !== 'string' && extra.opts) o.opts = extra.opts;
+        one(o);
+      }
+    } else if (d.js) {
+      // **鳴らして見せない項目にも、コードだけ付く**(FAQ など)
+      const wrap = el('div', 'tagbox');
+      const code = el('div', 'code', d.js);
+      wrap.append(code, el('span', 'lang', 'JS'));
+      wrap.classList.add('clip');
+      wrap.addEventListener('click', () => wrap.classList.toggle('open'));
+      box.appendChild(wrap);
+    }
+    // 書き方の節。**自分の文で試せる**
+    if (d.tryBox) box.appendChild(tryBox(d));
+    // ファイルから写す節
+    if (d.loadBox) box.appendChild(loadBox(d));
+    body.appendChild(box);
+  }
+  // **最後に、全部いじれる欄。**読み終えた人がそのまま作りはじめられるように
+  const fh = el('h2', null, FREE.h[lang] || FREE.h.en);
+  fh.id = 'freeform';                       // 冒頭から送る先
+  body.appendChild(fh);
+  // **何ができる欄なのかを、先に 1 行。**上の入力欄との違いが分からない
+  const fnote = el('div', 'freenote');
+  say(fnote, FREE, 'txt');
+  body.appendChild(fnote);
+  body.appendChild(freeform());
+
+  // **取りに行く先は、いちばん下に置く。**
+  // 読み終えた人が「で、どこから取るのか」で止まらないように
+  const dh = el('h2', null, lang === 'ja' ? 'ダウンロード' : 'Download');
+  dh.id = 'terms';                          // 冒頭から送る先
+  body.appendChild(dh);
+  const get = el('p', 'get' + (lang === 'ja' ? ' jp' : ''));
+  const rel = el('a', null, RELEASES);
+  rel.href = RELEASES;
+  rel.rel = 'noopener';
+  get.appendChild(rel);
+  body.appendChild(get);
+
+  // **メソッドの一覧はこのページに載せていない。**最後に送り先を置く
+  const ref = el('p', 'get' + (lang === 'ja' ? ' jp' : ''));
+  const api = el('a', null, lang === 'ja' ? 'API リファレンス' : 'API reference');
+  api.href = API_REF;
+  ref.appendChild(api);
+  body.appendChild(ref);
+}
+
+/**
+ * **その書き方で、自分の文を試す欄。**
+ *
+ * 読むだけでは印の効きが分からない。**書き換えて鳴らせる**ようにしておく。
+ * まだ入っていない書き方(`off`)は、欄と JS だけ置いて押せなくする —
+ * **入ったときの形が先に見えている**ほうが、待つ側は困らない
+ *
+ * @param {object} d 項目
+ */
+function tryBox(d) {
+  const t = d.tryBox;
+  const wrap = el('div', 'trybox');
+  const row = el('div', 'tryrow');
+  const btn = el('button', 'play', '\u25b6');
+  btn.type = 'button';
+  btn.disabled = !!t.off;
+  const box = el('textarea');
+  box.rows = t.rows || (t.off ? 3 : 2);
+  box.spellcheck = false;
+  box.value = t.text;
+  row.append(btn, box);
+  wrap.appendChild(row);
+
+  // **渡し方が `talk(text)` のままの欄では、JS を見せない。**
+  // 書き方の話をしているところに、同じ 1 行が並ぶだけになる
+  if (t.noJs) {
+    btn.addEventListener('click', () => sayAs(box.value, t.format, btn));
+    return wrap;
+  }
+  const tag = el('div', 'tagbox');
+  const code = el('div', 'code');
+  tag.append(code, el('span', 'lang', 'JS'));
+  wrap.appendChild(tag);
+  // **書いた字がそのまま JS に出る。**写して貼れば同じものが鳴る
+  const paint = () => {
+    const line = box.value
+      .replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+    code.textContent = t.format === 'voicevox'
+      ? 'const proj = JSON.parse("' + line + '");   // .vvproj\n'
+        + 'voice.talk(proj, { format: \'voicevox\' });'
+      // **書き方の指定が要らないものもある。**空の設定を見せない
+      : 'voice.talk("' + line + '"'
+        + (t.format ? ",\n  { format: '" + t.format + "' }" : '') + ');';
+  };
+  box.addEventListener('input', paint);
+  paint();
+  if (!t.off) btn.addEventListener('click', () => sayAs(box.value, t.format, btn));
+  return wrap;
+}
+
+/**
+ * **VOICEVOX のファイルを読む口。**
+ *
+ * **そっくりに作り直すものではない。**読み取れるものを、このページの書き方へ
+ * 写すだけ。写したあとは**ふつうの文**なので、鳴らせて、書き換えられる。
+ *
+ * 何を持ってくるかは選べる。**全部外すと、読みと切れ目だけ**になる。
+ *
+ * @param {object} d 項目
+ */
+function loadBox(d) {
+  const wrap = el('div', 'trybox loadbox');
+  const pick = el('div', 'pickrow');
+  const file = el('input');
+  file.type = 'file';
+  file.accept = '.vvproj,.json,application/json';
+  pick.appendChild(file);
+  const note = el('span', 'pickmsg');
+  pick.appendChild(note);
+  wrap.appendChild(pick);
+
+  // 引き継ぐもの。**外すほど、ただの読みに近づく**
+  const want = { usePitch: true, useLength: true, useMeta: true };
+  const opts = el('div', 'tune');
+  const LABEL = {
+    usePitch: { ja: '音の高さ', en: 'Pitch' },
+    useLength: { ja: '音の長さ', en: 'Length' },
+    useMeta: { ja: 'その他の設定', en: 'Other settings' },
+  };
+  for (const k of Object.keys(want)) {
+    const lab = el('label', null, LABEL[k][lang] || LABEL[k].en);
+    const inp = el('input');
+    inp.type = 'checkbox';
+    inp.checked = want[k];
+    inp.addEventListener('change', () => { want[k] = inp.checked; convert(); });
+    lab.insertBefore(inp, lab.firstChild);
+    opts.appendChild(lab);
+  }
+  wrap.appendChild(opts);
+
+  let raw = '';
+  /** 読んだものを写す。**選び直すたびに写し直す** */
+  const convert = () => {
+    if (!raw) return;
+    const got = MmsxxRetroTalk.voicevoxInfo(raw);
+    if (!got.ok) {
+      note.textContent = lang === 'ja' ? '読めませんでした' : 'Could not read it';
+      note.classList.add('bad');
+      return;
+    }
+    // **写した文は、下のフリーフォームへ入れる。**
+    // ここに欄をもう 1 つ置いても、同じものが 2 か所に出るだけになる
+    const text = MmsxxRetroTalk.voicevoxText(raw, want);
+    const free = document.querySelector('.item.free textarea');
+    if (free) { free.value = text; free.dispatchEvent(new Event('input')); }
+    // **高さを書き込んだ文には、自動の抑揚を掛けない。**
+    // 上げ下げが二重になって、写した形が崩れる。
+    // **高さを持ってこないときは戻す** — 切ったままだと、こんどは真っ平らになる
+    const panel = document.querySelector('.item.free');
+    const D = MmsxxRetroTalk.TALK_DEFAULTS || {};
+    if (panel && panel._knob) {
+      panel._knob('fall', want.usePitch ? 0 : (D.fall ?? 4));
+      panel._knob('rise', want.usePitch ? 0 : (D.rise ?? 1));
+    }
+    note.classList.remove('bad');
+    note.textContent = lang === 'ja'
+      ? `VOICEVOX ${got.version || '版が書かれていません'} / ${got.lines} セリフ / ${got.moras} 拍`
+        + ' / 下のフリーフォームに入れました'
+      : `VOICEVOX ${got.version || 'version not stated'} / ${got.lines} lines / ${got.moras} moras`
+        + ' / written into the freeform panel below';
+  };
+  file.addEventListener('change', () => {
+    const f = file.files && file.files[0];
+    if (!f) return;
+    f.text().then((t) => { raw = t; convert(); }).catch(() => {
+      raw = '';
+      note.textContent = lang === 'ja' ? '読めませんでした' : 'Could not read it';
+      note.classList.add('bad');
+    });
+  });
+  return wrap;
+}
+
+/** 記号列を鳴らす。**押すたびに登録し直す**(書き換わっているので) */
+async function sayAs(text, format, btn) {
+  const p = await engine();
+  if (playing) { playing.classList.remove('on'); playing.textContent = '\u25b6'; }
+  p.stopTalk();
+  if (playing === btn) { playing = null; return; }
+  p.defineTalk('__fmt__', text, format ? { ...V, format } : { ...V });
+  p.playTalk('__fmt__');
+  btn.classList.add('on'); btn.textContent = '\u25a0';
+  playing = btn;
+  if (window.__probe) { const f = window.__probe; window.__probe = null; f(p); }
+  clearTimeout(sayAs._t);
+  sayAs._t = setTimeout(() => {
+    if (playing === btn) { btn.classList.remove('on'); btn.textContent = '\u25b6'; playing = null; }
+  }, Math.max(1200, text.length * 140));
+}
+
+/**
+ * **全部のノブを出す欄。**このページの最後に置く。
+ *
+ * 上の自由入力は「ふつうに使うならこれ」を選ぶだけにしてある。
+ * ここは**全部いじれる**ほうで、書き方も選べて、.wav にして持ち帰れる。
+ * 読み終えた人が**そのまま作りはじめられる**ところ
+ */
+const FREE = {
+  h: { en: 'Freeform', ja: 'フリーフォーム' },
+  ja: 'すべてのパラメータをその場で変えながら試せます。'
+    + '組み合わせが決まったら、下に出ている JavaScript をそのまま写して使えます。'
+    + 'WAV も保存できます。',
+  en: 'Every knob is here to play with. Once you like what you hear, copy the JavaScript shown '
+    + 'below it, or save the result as a WAV.',
+  text: 'ここはじゆうにかきかえてつかってね？ おんせいデータもダウンロードできるよ！',
+  /** 出すノブと、その初期値。**既定はエンジンから取る**(食い違わない) */
+  keys: ['pitch', 'pitchShift', 'tuneStep', 'speed', 'speedShift', 'level', 'volumeShift',
+    'fall', 'rise', 'formantShift', 'bandShift',
+    'breath', 'jitter', 'ring', 'interp', 'frame', 'bits', 'style', 'format'],
+};
+
+/** 平均 0、ばらつき 1 の乱数(ボックス・ミュラー法) */
+function gauss() {
+  const u = Math.random() || 1e-9;
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random());
+}
+
+/**
+ * その設定の値を、でたらめに選ぶ。
+ *
+ * **一様に散らすと、たいてい外れになる。**幅の端どうしが同じ確率で出るので、
+ * 12 個も同時に振れば、まず聞けたものにならない(2026-09-04)。
+ *
+ * **いまの値をまん中にして、山なりに散らす。**ばらつきは端までの 3 分の 1 に
+ * とってあるので、**ほとんどは近くに落ちて、たまに端まで飛ぶ。**
+ * 平均すればいまの声のまま、ときどき別人が出る、という散り方になる。
+ *
+ * 書き方(`format`)は散らさない。文の読み方が変わってしまう
+ *
+ * @param {string} k 設定の名前
+ * @param {*} v いまの値(散らばりのまん中)
+ */
+function randomKnob(k, v) {
+  if (k === 'format') return v;
+  const g = gauss();
+  if (KNOB_WORDS[k]) {
+    // 言葉は近さで測れないので、**たいていそのまま、たまに別のもの**
+    if (Math.random() < 0.6) return v;
+    const rest = KNOB_WORDS[k].filter((x) => x !== v);
+    return rest[Math.floor(Math.random() * rest.length)] ?? v;
+  }
+  if (typeof v === 'boolean') return Math.random() < 0.8 ? v : !v;
+  const r = KNOB_RANGE[k];
+  if (!r) return v;
+  if (!Array.isArray(r)) {
+    // 決まった値から選ぶもの。**いまの値の近くを選びやすく**
+    const list = r.list;
+    const at = Math.max(0, list.indexOf(v));
+    const to = Math.round(at + g * (list.length / 4));
+    return list[Math.max(0, Math.min(list.length - 1, to))];
+  }
+  const [lo, hi, step] = r;
+  // 端までの 3 分の 1 をばらつきにする。**上と下で幅が違ってよい**
+  const sd = (g < 0 ? v - lo : hi - v) / 3 || step;
+  const x = Math.max(lo, Math.min(hi, v + g * sd));
+  return +(lo + step * Math.round((x - lo) / step)).toFixed(4);
+}
+
+/** フリーフォームの欄を作る */
+function freeform() {
+  const D = MmsxxRetroTalk.TALK_DEFAULTS || {};
+  const opts = {};
+  for (const k of FREE.keys) opts[k] = k === 'format' ? 'plain' : (D[k] ?? 0);
+  const live = { ...opts };
+  const box = el('div', 'item free');
+
+  const row = el('div', 'tryrow');
+  const btn = el('button', 'play', '\u25b6');
+  btn.type = 'button';
+  const area = el('textarea');
+  area.rows = 2;
+  area.spellcheck = false;
+  area.value = FREE.text;
+  row.append(btn, area);
+  box.appendChild(row);
+
+  // **渡す形にする。**`plain` は「何も渡さない」なので落とす
+  const pass = () => {
+    const o = { ...live };
+    if (o.format === 'plain') delete o.format;
+    return o;
+  };
+
+  const tag = el('div', 'tagbox');
+  const code = el('div', 'code');
+  tag.append(code, el('span', 'lang', 'JS'));
+  box.appendChild(tag);
+  const val = (v) => (typeof v === 'string' ? "'" + v + "'" : String(v));
+  const paint = () => {
+    const line = area.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+    const o = pass();
+    code.textContent = 'voice.talk("' + line + '",\n  { '
+      + Object.entries(o).map(([k, v]) => k + ': ' + val(v)).join(', ') + ' });';
+  };
+
+  // 値のつまみ。**変えたらその場で JS にも出る**
+  const tune = el('div', 'tune');
+  const fields = [];
+  for (const [k, v] of Object.entries(opts)) {
+    const lab = el('label', null, k);
+    let f;
+    if (typeof v === 'boolean') {
+      const inp = el('input');
+      inp.type = 'checkbox';
+      inp.checked = v;
+      f = { node: inp, on: (g) => inp.addEventListener('change', g),
+        read: () => inp.checked, set: (x) => { inp.checked = x; }, after: () => {} };
+    } else f = knobField(k, v);
+    fields.push([k, v, f]);
+    f.on(() => { live[k] = f.read(); f.after(); paint(); });
+    lab.appendChild(f.node);
+    tune.appendChild(lab);
+  }
+  const back = el('button', 'reset', 'Reset');
+  back.type = 'button';
+  back.addEventListener('click', () => {
+    for (const [k, v, f] of fields) { live[k] = v; f.set(v); f.after(); }
+    paint();
+    // **戻したら、戻したところを鳴らす。**散らすほうと同じで、
+    // 押し直しに行かせない
+    if (playing === btn) { playing = null; }
+    btn.click();
+  });
+  tune.appendChild(back);
+  // **でたらめに散らして、そのまま鳴らす。**
+  // どれがどう効くかは、触るより先に**出会う**ほうが早い。
+  // 散らしただけで止めると、もう一度押しに行くことになる
+  const dice = el('button', 'reset', lang === 'ja' ? 'パラメータのランダム化' : 'Randomise');
+  dice.type = 'button';
+  dice.addEventListener('click', () => {
+    for (const [k, v, f] of fields) {
+      const x = randomKnob(k, v);
+      live[k] = x;
+      f.set(x);
+      f.after();
+    }
+    paint();
+    if (playing === btn) { playing = null; }      // 鳴っていても鳴らし直す
+    btn.click();
+  });
+  tune.appendChild(dice);
+  box.appendChild(tune);
+
+  // 持ち帰り。**1 回鳴らすまでは押せない**(何が保存されるのか決まらないので)。
+  // ここにリンクの札は置かない — 送れるのは文と話す人だけで、
+  // この欄のつまみは載らない。**送った先で別の声になる**ほうが困る
+  const foot = el('div', 'freefoot');
+  const wav = el('button', 'wavlink');
+  wav.type = 'button';
+  wav.disabled = true;
+  wav.textContent = lang === 'ja' ? 'WAVを保存' : 'Save as WAV';
+  wav.addEventListener('click', () => saveWav(area.value.trim(), pass(), 'retrotalk.wav'));
+  foot.appendChild(wav);
+
+  box.appendChild(foot);
+
+  // 外からノブを動かす口(VOICEVOX から写したときに使う)
+  box._knob = (k, v) => {
+    const got = fields.find((f) => f[0] === k);
+    if (!got) return;
+    live[k] = v;
+    // **戻す先も、ここで置き直す。**写したあとに Reset を押して
+    // 自動の抑揚が戻ってきたら、写した形が崩れる
+    got[1] = v;
+    got[2].set(v);
+    got[2].after();
+    paint();
+  };
+
+  area.addEventListener('input', paint);
+  paint();
+  btn.addEventListener('click', async () => {
+    const p = await engine();
+    if (playing) { playing.classList.remove('on'); playing.textContent = '\u25b6'; }
+    p.stopTalk();
+    if (playing === btn) { playing = null; return; }
+    p.defineTalk('__free__', area.value, { ...V, ...pass() });
+    p.playTalk('__free__');
+    wav.disabled = false;
+    btn.classList.add('on'); btn.textContent = '\u25a0';
+    playing = btn;
+    if (window.__probe) { const f = window.__probe; window.__probe = null; f(p); }
+    clearTimeout(freeform._t);
+    freeform._t = setTimeout(() => {
+      if (playing === btn) { btn.classList.remove('on'); btn.textContent = '\u25b6'; playing = null; }
+    }, Math.max(1200, area.value.length * 140));
+  });
+  return box;
+}
+
+/**
+ * **設定ごとの動かせる幅。**`[下, 上, 刻み]` か、選ぶだけのものは `{ list }`。
+ *
+ * **数を打たせない。**打てる欄にすると、鳴らない値を入れて
+ * 「壊れた」になる。幅を決めておけば、どこまで動かせるかも同時に見える
+ */
+const KNOB_RANGE = {
+  pitch: [60, 400, 5],
+  pitchShift: [-12, 12, 1],
+  tuneStep: [0.5, 6, 0.5],
+  speedShift: [0.5, 2, 0.05],
+  volumeShift: [-15, 15, 1],
+  level: [0.05, 0.3, 0.01],
+  speed: [0.5, 2, 0.05],
+  formantShift: [-8, 8, 1],
+  bandShift: [-6, 6, 1],
+  breath: [0, 1, 0.05],
+  jitter: [0, 1, 0.05],
+  ring: [0, 200, 5],
+  fall: [0, 10, 1],
+  rise: [0, 8, 1],
+  bits: { list: [0, 3, 4, 5, 6, 7, 8] },
+  frame: [0.002, 0.06, 0.002],
+};
+
+/** **選ぶ数が多ければ、つまみ。**少なければ選ぶだけにする(この数で分ける) */
+const KNOB_MANY = 12;
+
+/** 決まった言葉から選ぶもの。`plain` はこのページの書き方(何も渡さない) */
+const KNOB_WORDS = {
+  style: ['flat', 'adsr', 'vibrato'],
+  format: ['plain', 'aquestalk'],
+};
+
+/**
+ * その設定の入れものを作る。つまみか、選ぶ欄か、素の数か。
+ *
+ * @param {string} k 設定の名前
+ * @param {number} v いまの値
+ * @returns {{node:HTMLElement, read:function():number, set:function(number):void}}
+ */
+function knobField(k, v) {
+  // 言葉から選ぶもの
+  if (KNOB_WORDS[k]) {
+    const sel = el('select');
+    for (const o of KNOB_WORDS[k]) {
+      const op = el('option', null, o);
+      op.value = o;
+      if (o === v) op.selected = true;
+      sel.appendChild(op);
+    }
+    return { node: sel, on: (f) => sel.addEventListener('change', f),
+      read: () => sel.value, set: (x) => { sel.value = String(x); }, after: () => {} };
+  }
+  const r = KNOB_RANGE[k];
+  const round = (x) => +x.toFixed(4);
+  if (r && Array.isArray(r)) {
+    const [lo, hi, step] = r;
+    if ((hi - lo) / step + 1 > KNOB_MANY) {
+      const inp = el('input');
+      inp.type = 'range';
+      inp.min = String(Math.min(lo, v));
+      inp.max = String(Math.max(hi, v));
+      inp.step = String(step);
+      inp.value = String(v);
+      const now = el('i', 'now', String(v));
+      const node = el('span', 'field');
+      node.append(inp, now);
+      return {
+        node,
+        on: (f) => inp.addEventListener('input', f),
+        read: () => round(+inp.value),
+        set: (x) => { inp.value = String(x); now.textContent = String(x); },
+        after: () => { now.textContent = String(round(+inp.value)); },
+      };
+    }
+  }
+  // 選ぶだけ。**いまの値が一覧に無ければ足す** — 見えている値を落とさない
+  const list = r ? (Array.isArray(r) ? null : r.list.slice()) : null;
+  const opts = list || (r
+    ? Array.from({ length: Math.round((r[1] - r[0]) / r[2]) + 1 }, (_, i) => round(r[0] + i * r[2]))
+    : null);
+  if (!opts) {
+    const inp = el('input');
+    inp.type = 'number';
+    inp.step = Number.isInteger(v) ? '1' : '0.05';
+    inp.value = String(v);
+    return { node: inp, on: (f) => inp.addEventListener('input', f),
+      read: () => +inp.value, set: (x) => { inp.value = String(x); }, after: () => {} };
+  }
+  if (!opts.includes(v)) { opts.push(v); opts.sort((a, b) => a - b); }
+  const sel = el('select');
+  for (const o of opts) {
+    const op = el('option', null, String(o));
+    op.value = String(o);
+    if (o === v) op.selected = true;
+    sel.appendChild(op);
+  }
+  return { node: sel, on: (f) => sel.addEventListener('change', f),
+    read: () => +sel.value, set: (x) => { sel.value = String(x); }, after: () => {} };
+}
+
+/**
+ * **設定の値を、その場で変える欄。**
+ *
+ * 変えたら、上に出ている JS も書き換える(**見えている字と鳴る音を合わせる**)。
+ * 波形は名前ごとに覚えているので、**覚えたぶんを捨ててから**でないと
+ * 変えたのに前の音が鳴る
+ *
+ * @param {object} d 項目。変えたぶんは `_live` に持つ
+ * @param {HTMLElement} code 上に出ている JS の入れもの
+ */
+function tuner(d, code) {
+  const live = { ...d.opts };
+  d._live = live;
+  const row = el('div', 'tune');
+  const inputs = [];
+  const forget = () => {
+    // **同じ項目のぶんは全部忘れる。**1 つの項目が文を何本も持つので、
+    // 名前は文と設定でも分かれている(つまみを動かしたら全部作り直す)
+    const head = '__x__' + d._i + '_';
+    for (const k of [...made]) if (k.startsWith(head)) made.delete(k);
+    code.textContent = jsFor({ ...d, opts: live });
+  };
+  // **つまみに出すのは、その項目の話をしているものだけ。**
+  // 設定には声を作るためのもの(`formantShift` など)も混ざっているが、
+  // 並べると「この項目の話」に見えてしまう(`knobs` があればそれだけ)
+  for (const [k, v] of Object.entries(d.opts)) {
+    if (d.knobs && !d.knobs.includes(k)) continue;
+    const lab = el('label', null, k);
+    let f;
+    if (typeof v === 'boolean') {
+      const inp = el('input');
+      inp.type = 'checkbox';
+      inp.checked = v;
+      f = { node: inp, on: (g) => inp.addEventListener('change', g),
+        read: () => inp.checked, set: (x) => { inp.checked = x; }, after: () => {} };
+    } else if (typeof v === 'number' || KNOB_WORDS[k]) {
+      f = knobField(k, v);
+    } else {
+      const inp = el('input');
+      inp.type = 'text';
+      inp.value = String(v);
+      f = { node: inp, on: (g) => inp.addEventListener('input', g),
+        read: () => inp.value, set: (x) => { inp.value = String(x); }, after: () => {} };
+    }
+    inputs.push([k, v, f]);
+    f.on(() => { live[k] = f.read(); f.after(); forget(); });
+    lab.appendChild(f.node);
+    row.appendChild(lab);
+  }
+  // **戻せること。**触ったあと「元がいくつだったか」が分からなくなる
+  const back = el('button', 'reset', 'Reset');
+  back.type = 'button';
+  back.addEventListener('click', () => {
+    for (const [k, v, f] of inputs) {
+      live[k] = v;
+      f.set(v);
+    }
+    forget();
+  });
+  row.appendChild(back);
+  return row;
+}
+
+function chips(host, items, get, set) {
+  host.textContent = '';
+  for (const [val, label] of items) {
+    const c = el('button', null, label);
+    c.type = 'button';
+    c.setAttribute('aria-pressed', get() === val ? 'true' : 'false');
+    c.addEventListener('click', () => { set(val); });
+    host.appendChild(c);
+  }
+}
+function paintTheme() {
+  const r = document.documentElement;
+  if (theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', theme);
+}
+function bars() {
+  chips($('#lang'), [['en', 'EN'], ['ja', 'JA']], () => lang, (v) => { lang = v; bars(); build(); });
+  chips($('#theme'), [['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark']],
+    () => theme, (v) => { theme = v; paintTheme(); bars(); });
+}
+
+function probe() {
+  const host = $('#probe');
+  const cell = (k, v) => {
+    const d = el('div');
+    d.appendChild(el('b', null, k));
+    d.appendChild(el('span', null, v));
+    host.appendChild(d);
+    return d;
+  };
+  cell('RetroTalk', 'v__KIT_VERSION__');
+}
+
+paintTheme();
+probe();
+bars();
+build();
+</script>
