@@ -7,7 +7,7 @@
 // そのクラスに付けて 1 つにまとめています。使う側が覚える名前を
 // `MmsxxRetroTalk` の 1 つだけにするためです。
 
-import { TalkAudio } from './talk_audio.js';
+import { MmsxxRetroTalk } from './talk_audio.js';
 import { renderTalk, talkFrames, TALK_DEFAULTS, TALK_STYLES } from './talk.js';
 import { checkTalk, parseTalk } from './kana.js';
 import { checkAqua } from './aquestalk.js';
@@ -18,7 +18,7 @@ import { RETROTALK_VERSION } from './version.js';
 // 再生を伴わない関数は、クラスに付けます。インスタンスは声そのもので、
 // こちらは声を作らずに調べたり変換したりする道具です。
 // クラスに付けておくと、`new` しなくても使えることが呼び方から分かります。
-Object.assign(TalkAudio, {
+Object.assign(MmsxxRetroTalk, {
   renderTalk,
   talkFrames,
   parseTalk,
@@ -32,5 +32,5 @@ Object.assign(TalkAudio, {
   VERSION: RETROTALK_VERSION,
 });
 
-export { TalkAudio as MmsxxRetroTalk };
-export default TalkAudio;
+export { MmsxxRetroTalk };
+export default MmsxxRetroTalk;

@@ -19,17 +19,16 @@ import { checkAqua } from './aquestalk.js';
 const AUTO_TALK = '\u0000talk:';
 
 /**
- * RetroTalk の入口です。読み込むと `MmsxxRetroTalk` という名前で使えます。
+ * RetroTalk の入口です。音声の登録と再生を扱います。
  *
- * 音声の登録と再生を扱います。`SimpleAudio` を継承しているので、
- * 音量と消音の操作もここから行えます。
+ * `SimpleAudio` を継承しているので、音量と消音の操作もここから行えます。
  *
  * @extends SimpleAudio
  * @example
  * const voice = new MmsxxRetroTalk(new AudioContext());
  * voice.talk('コンニチワ');
  */
-export class TalkAudio extends SimpleAudio {
+export class MmsxxRetroTalk extends SimpleAudio {
   /**
    * @param {AudioContext} ctx 呼び出し側で作った AudioContext
    * @param {object} [opts]

@@ -232,7 +232,7 @@ export function parseAqua(text, opts = {}) {
  * @param {string} text 記号列
  * @returns {{ok:boolean, kana:number, unknown:Array}}
  *   `ok` は読めない文字が無ければ true、`kana` は読めた文字数
- * @alias TalkAudio.checkAqua
+ * @alias MmsxxRetroTalk.checkAqua
  * @static
  */
 export function checkAqua(text) {

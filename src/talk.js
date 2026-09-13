@@ -211,7 +211,7 @@ const SLEW_F = 6, SLEW_B = 4, SLEW_P = 2;
  *
  * 上に積んである。`vibrato` は `adsr` を含む —
  * 音量が平らなまま音程だけ震えると、震えているというよりぐらついて聞こえる。
- * @alias TalkAudio.TALK_STYLES
+ * @alias MmsxxRetroTalk.TALK_STYLES
  * @static
  */
 export const TALK_STYLES = ['flat', 'natural', 'adsr', 'vibrato'];
@@ -894,7 +894,7 @@ const CONSONANTS2 = {
  *
  * 実機に無いパラメータ(声道・息・ゆらぎ・掛け合わせ)も、省いたときは効かない
  * ように 0 を並べてある。何も渡さなければ実機の作りに戻る。
- * @alias TalkAudio.TALK_DEFAULTS
+ * @alias MmsxxRetroTalk.TALK_DEFAULTS
  * @static
  */
 export const TALK_DEFAULTS = {
@@ -1771,7 +1771,7 @@ function runFrames(targets, opts) {
  * @param {object} [opts] renderTalk と同じ
  * @returns {Array<{param:number[], bpos:number[], P:number, amp:number,
  *            voiced:boolean, noise:boolean, mora:number}>}
- * @alias TalkAudio.talkFrames
+ * @alias MmsxxRetroTalk.talkFrames
  * @static
  */
 export function talkFrames(text, opts = {}) {
@@ -1865,7 +1865,7 @@ function chainNorm(param, bpos) {
 /**
  * テキストから波形を生成します。再生はしません。
  *
- * 音として鳴らすときは `TalkAudio` が内部で呼びます。書き出したいときや、
+ * 音として鳴らすときは `MmsxxRetroTalk` が内部で呼びます。書き出したいときや、
  * 自分で AudioBuffer を組み立てたいときに直接使います。
  *
  * ```js
@@ -1926,7 +1926,7 @@ function chainNorm(param, bpos) {
  *   破裂音のある文だけ小さくなることがない
  * @param {number} [opts.level=0.15] 揃えたあとの RMS
  * @returns {{rate:number, data:Float32Array, frames:number}}
- * @alias TalkAudio.renderTalk
+ * @alias MmsxxRetroTalk.renderTalk
  * @static
  */
 export function renderTalk(text, opts = {}) {

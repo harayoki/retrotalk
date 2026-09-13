@@ -23,7 +23,7 @@
  *          getChannelData: function(number): Float32Array}} buffer
  *   AudioBuffer、または同じ形のオブジェクト
  * @returns {Uint8Array} 44 バイトのヘッダーと、それに続く音声データ
- * @alias TalkAudio.encodeWAV
+ * @alias MmsxxRetroTalk.encodeWAV
  * @static
  */
 export function encodeWAV(buffer) {
