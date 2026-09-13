@@ -186,7 +186,7 @@ function toKatakana(text) {
  * @param {string} text しゃべらせる文
  * @returns {{ok:boolean, kana:number, unknown:Array<{ch:string, at:number, kind:string}>}}
  *   `kind` は `kanji` / `other`
- * @alias TalkAudio.checkTalk
+ * @alias MmsxxRetroTalk.checkTalk
  * @static
  */
 export function checkTalk(text) {
@@ -254,7 +254,7 @@ export function checkTalk(text) {
  *
  * @param {string} text かな。ひらがなでもカタカナでもかまいません（内部で揃えます）
  * @returns {Array<object>} 拍の並び
- * @alias TalkAudio.parseTalk
+ * @alias MmsxxRetroTalk.parseTalk
  * @static
  */
 export function parseTalk(text) {
