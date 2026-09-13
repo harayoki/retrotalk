@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2026 harayoki
 // SPDX-License-Identifier: MIT
 
-// 型紙にエンジンを流し込んで、デモとマニュアルのページにします。
+// テンプレートにエンジンを流し込んで、デモとマニュアルのページにします。
 //
 // 読める文字の表は src/kana.js から取り出せますが、「そう書くとどう聞こえるか」は
-// 取り出せません。そこは型紙の中に手で書いてあります。
+// 取り出せません。そこはテンプレートの中に手で書いてあります。
 
 import { readFileSync } from 'node:fs';
 import { bundleEngine, safe } from './engine.mjs';

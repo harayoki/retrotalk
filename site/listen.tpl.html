@@ -530,7 +530,7 @@ function probe() {
   };
   cell('エンジン', MmsxxRetroTalk.VERSION ? 'v' + MmsxxRetroTalk.VERSION : '埋め込み');
   cell('文', String(DOC.filter((d) => d.say).length));
-  cell('声のエンジン', 'v2.0.0 α');
+  cell('声のエンジン', 'v' + MmsxxRetroTalk.VERSION);
   const w = cell('波形', 'リアルタイム生成');
   window.__probe = (p) => {
     // **録音を持っていないことを、その場で見せる。**波形は鳴らすときに作っている
