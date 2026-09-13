@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1]
+
+### Changed
+
+- The class is named `MmsxxRetroTalk` in the source as well. The API reference
+  used to show `TalkAudio`, a name that appears nowhere in the public API.
+- `SimpleAudio` says in one line that it is the parent class and is not meant
+  to be used directly.
+
 ## [2.1.0]
 
 Open source release under the MIT License.
